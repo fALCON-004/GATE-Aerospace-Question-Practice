@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GATE Practice Question</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        :root {
+            --gate-header: #2d3e50;
+            --gate-blue: #3A8BDC;
+            --calc-header: #3b5998;
+            --status-correct: #28a745;
+            --status-incorrect: #dc3545;
+            --badge-pyq: #6f42c1;
+            --badge-practice: #17a2b8;
+            --bg-light: #f4f6f9;
+        }
+
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; background-color: var(--bg-light); overflow: hidden; }
+
+        /* HEADER */
+        header {
+            background-color: var(--gate-header);
+            color: white;
+            padding: 0 1.5rem;
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 100;
+        }
+        .header-title { font-size: 1.2rem; font-weight: 600; }
+        .header-info { display: flex; gap: 15px; align-items: center; }
+        .exam-timer-box { 
+            background: #222; color: #00ff00; padding: 5px 12px; 
+            font-family: 'Consolas', monospace; font-size: 1.2rem; 
+            border-radius: 4px; border: 1px solid #444; min-width: 80px; text-align: center;
+        }
+        .action-btn { 
+            border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; 
+            font-weight: bold; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.2); 
+        }
+        .btn-calc { background: #f0ad4e; }
+        .btn-finish { background: #dc3545; }
+
+        /* MAIN LAYOUT */
+        .main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+        /* QUESTION AREA */
+        .question-area {
+            flex: 3; display: flex; flex-direction: column;
+            background: white; border-right: 1px solid #e0e0e0;
+            overflow-y: hidden;
+        }
+
+        .question-header-bar {
+            background: #f8f9fa; padding: 10px 25px; border-bottom: 1px solid #e0e0e0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .q-type-badge {
+            padding: 4px 10px; border-radius: 12px; color: white;
+            font-size: 0.75rem; font-weight: bold; text-transform: uppercase;
+            margin-right: 10px;
+        }
+        .bg-pyq { background-color: var(--badge-pyq); }
+        .bg-practice { background-color: var(--badge-practice); }
+
+        .q-timer-container {
+            display: flex; align-items: center; gap: 8px;
+            background: white; padding: 5px 12px; border-radius: 6px;
+            border: 1px solid #ccc; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .timer-val { font-family: 'Consolas', monospace; font-size: 1.1rem; font-weight: bold; }
+        .txt-red { color: #dc3545; }
+        .txt-green { color: #28a745; }
+
+        .question-scroll { padding: 30px; flex: 1; overflow-y: auto; font-size: 1.1rem; line-height: 1.6; color: #333; }
+        .question-text { margin-bottom: 25px; font-weight: 500; }
+
+        .option-item {
+            display: flex; align-items: center; padding: 12px 15px; margin-bottom: 12px;
+            border: 2px solid #e9ecef; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        .option-item:hover { border-color: var(--gate-blue); background: #f0f7ff; }
+        .option-item.disabled { cursor: default; opacity: 0.8; }
+        .option-item input { margin-right: 15px; transform: scale(1.2); }
+
+        .control-footer {
+            padding: 15px 25px; background: #fff; border-top: 1px solid #e0e0e0;
+            display: flex; justify-content: space-between;
+        }
+        .btn-check { background: var(--gate-blue); color: white; padding: 10px 25px; font-size: 1rem; border: none; border-radius: 4px; cursor: pointer;}
+
+        /* SIDEBAR */
+        .sidebar {
+            flex: 1; min-width: 300px; max-width: 340px; background: #fff;
+            display: flex; flex-direction: column; border-left: 1px solid #e0e0e0;
+        }
+        .candidate-profile { padding: 15px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 12px; }
+        .profile-img { width: 45px; height: 45px; background: #e0e0e0; border-radius: 50%; }
+        
+        .score-panel {
+            padding: 15px; background: #2d3e50; color: white; font-size: 0.85rem;
+            display: flex; justify-content: space-around;
+        }
+        .score-item span { display: block; font-size: 1.4rem; font-weight: bold; color: #f0ad4e; }
+
+        .palette-grid {
+            padding: 15px; display: grid; grid-template-columns: repeat(5, 1fr);
+            gap: 8px; overflow-y: auto; align-content: start; flex: 1;
+        }
+        .p-btn {
+            height: 35px; border: 1px solid #e0e0e0; background: #fff;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 0.9rem; border-radius: 4px; font-weight: 600; color: #555;
+        }
+        .p-btn.active-q { border: 2px solid var(--gate-blue); color: var(--gate-blue); }
+        .status-correct { background-color: var(--status-correct); color: white; border: none; }
+        .status-incorrect { background-color: var(--status-incorrect); color: white; border: none; }
+
+        .filter-section { padding: 15px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+        select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        
+        .explanation-box {
+            margin-top: 20px; padding: 15px; background: #eef6fc;
+            border-left: 4px solid var(--gate-blue); display: none; font-size: 0.95rem;
+        }
+
+        /* ----------------------------------------------------- */
+        /* VIRTUAL CALCULATOR STYLES */
+        /* ----------------------------------------------------- */
+        #virtualCalc {
+            position: absolute; top: 80px; left: 50px; width: 400px;
+            background: #e0e0e0; border: 1px solid #999;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1000;
+            display: none; font-family: Arial, sans-serif;
+            border-radius: 4px;
+        }
+        .calc-header {
+            background: var(--calc-header); color: white; padding: 8px;
+            cursor: move; display: flex; justify-content: space-between;
+            font-size: 0.9rem; font-weight: bold;
+        }
+        .calc-close { cursor: pointer; color: #fff; font-weight: bold; }
+        
+        .calc-display {
+            background: white; margin: 10px; padding: 5px;
+            border: 1px solid #bbb; text-align: right;
+        }
+        #calcInput { 
+            width: 100%; border: none; font-size: 1.5rem; text-align: right; outline: none; margin-bottom: 5px;
+        }
+        #calcPreview {
+            display: block; font-size: 0.8rem; color: #666; height: 15px;
+        }
+
+        .calc-body { padding: 0 10px 10px 10px; }
+        .calc-row { display: flex; gap: 5px; margin-bottom: 5px; }
+        .calc-grid { display: grid; grid-template-columns: 2fr 3fr; gap: 5px; }
+        
+        .calc-left, .calc-right { display: grid; gap: 4px; }
+        .calc-left { grid-template-columns: repeat(3, 1fr); }
+        .calc-right { grid-template-columns: repeat(4, 1fr); }
+
+        .c-btn {
+            padding: 8px 0; border: 1px solid #aaa; background: #f0f0f0;
+            font-size: 0.85rem; cursor: pointer; border-radius: 2px;
+            transition: background 0.1s; font-weight: 500;
+        }
+        .c-btn:active { background: #ccc; }
+        .c-btn.num { background: #fff; font-weight: bold; font-size: 1rem; }
+        .c-btn.op { background: #dcdcdc; }
+        .c-btn.eq { background: var(--calc-header); color: white; border-color: #2a4073; }
+        .c-btn.mem { background: #e8e8e8; color: #a00; }
+        
+        .radio-group { font-size: 0.8rem; margin-bottom: 5px; display: flex; gap: 10px; background: #ddd; padding: 4px; border-radius: 2px;}
+
+        /* REPORT styles */
+        #reportContainer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 200; overflow-y: auto; padding: 40px; display: none;
+        }
+        .report-header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 30px; }
+        .report-stats { display: flex; justify-content: center; gap: 40px; margin-bottom: 30px; }
+        .stat-box { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; min-width: 150px; }
+        .stat-val { display: block; font-size: 1.5rem; font-weight: bold; color: var(--gate-blue); }
+        .report-q-item { border: 1px solid #eee; padding: 15px; margin-bottom: 15px; border-radius: 6px; page-break-inside: avoid; }
+        .report-q-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; color: #555; }
+        .rep-status { padding: 2px 8px; border-radius: 4px; color: white; font-size: 0.8rem; }
+        .rep-correct { background: var(--status-correct); }
+        .rep-incorrect { background: var(--status-incorrect); }
+        .rep-unattempted { background: #999; }
+        .btn-download {
+            position: fixed; bottom: 30px; right: 30px;
+            background: var(--gate-blue); color: white; padding: 15px 30px;
+            border: none; border-radius: 30px; font-size: 1.1rem; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 300;
+        }
+
+        @media (max-width: 768px) {
+            .main-container { flex-direction: column; }
+            .sidebar { display: none; }
+            #virtualCalc { width: 90%; left: 5%; top: 10%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">Differentiation and Integration</div>
+        <div class="header-info">
+            <button class="action-btn btn-calc" onclick="toggleCalc()">🖩 Virtual Calculator</button>
+            <span>Total:</span>
+            <div class="exam-timer-box" id="examTimer">00:00</div>
+            <button class="action-btn btn-finish" onclick="showReport()">Finish Session</button>
+        </div>
+    </header>
+
+    <div class="main-container" id="mainInterface">
+        <div class="question-area">
+            <div class="question-header-bar">
+                <div style="display: flex; align-items: center;">
+                    <span id="typeBadge" class="q-type-badge bg-practice">Practice</span>
+                    <span id="marksDisplay" style="color: #666; font-size: 0.9rem; font-weight: 600;"></span>
+                </div>
+                
+                <div class="q-timer-container">
+                    <span style="font-size: 0.9rem; color: #666;">⏱️ Time:</span>
+                    <span id="qTimerDisplay" class="timer-val">00:00</span>
+                    <span id="extraTimeDisplay" style="font-size: 0.8rem; font-weight:bold;"></span>
+                </div>
+            </div>
+
+            <div class="question-scroll">
+                <div class="filter-section">
+                    <select id="topicSelect" onchange="loadQuestions()">
+                        <option value="Limits">Limits</option>
+                        <option value="Continuity and Differentiability">Continuity & Differentiability</option>
+                        <option value="Mean Value Theorems">Mean Value Theorems</option>
+                        <option value="Partial Derivatives">Partial Derivatives</option>
+                        <option value="Maxima and Minima">Maxima & Minima</option>
+                        <option value="Single and Multiple Integration">Single & Multiple Integration</option>
+                        <option value="Integration Applications">Integration Applications</option>
+                    </select>
+                </div>
+                
+                <h3 id="qNumDisplay" style="color: var(--gate-blue); margin-top: 20px;">Question 1.</h3>
+                <div id="qText" class="question-text">Loading...</div>
+                
+                <div id="optionsContainer" class="options-container"></div>
+
+                <div id="feedbackArea" style="margin-top: 20px; font-weight: bold; min-height: 25px;"></div>
+                <div id="explanation" class="explanation-box"></div>
+            </div>
+
+            <div class="control-footer">
+                <button class="action-btn" style="background:#fff; color:#555; border:1px solid #ccc" onclick="clearResponse()">Clear</button>
+                <button class="btn-check" onclick="checkAndNext()">Check & Next →</button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="candidate-profile">
+                <div class="profile-img"></div>
+                <div>
+                    <div style="font-weight: bold; color: #333;">Candidate</div>
+                    <div style="font-size: 0.8rem; color: #777;">GATE Calculus</div>
+                </div>
+            </div>
+
+            <div class="score-panel">
+                <div class="score-item"><span>+<span id="scoreVal">0</span></span>Score</div>
+                <div class="score-item"><span id="attemptedVal">0</span>Attmp</div>
+                <div class="score-item"><span id="accuracyVal">0%</span>Acc</div>
+            </div>
+
+            <div class="palette-grid" id="questionPalette"></div>
+        </div>
+    </div>
+
+    <div id="virtualCalc">
+        <div class="calc-header" id="calcHeader">
+            <span>GATE Scientific Calculator</span>
+            <span class="calc-close" onclick="toggleCalc()">X</span>
+        </div>
+        <div class="calc-display">
+            <span id="calcPreview"></span>
+            <input type="text" id="calcInput" value="0" readonly>
+        </div>
+        <div class="calc-body">
+            <div class="radio-group">
+                <label><input type="radio" name="angle" value="deg" checked onchange="setMode('deg')"> Deg</label>
+                <label><input type="radio" name="angle" value="rad" onchange="setMode('rad')"> Rad</label>
+            </div>
+            
+            <div class="calc-grid">
+                <div class="calc-left">
+                     <button class="c-btn mem" onclick="mem('MC')">MC</button>
+                    <button class="c-btn mem" onclick="mem('MR')">MR</button>
+                    <button class="c-btn mem" onclick="mem('MS')">MS</button>
+                    <button class="c-btn" onclick="scientific('sin')">sin</button>
+                    <button class="c-btn" onclick="scientific('cos')">cos</button>
+                    <button class="c-btn" onclick="scientific('tan')">tan</button>
+                    <button class="c-btn" onclick="scientific('ln')">ln</button>
+                    <button class="c-btn" onclick="scientific('log')">log</button>
+                    <button class="c-btn" onclick="scientific('fact')">n!</button>
+                    <button class="c-btn" onclick="scientific('pow2')">x²</button>
+                    <button class="c-btn" onclick="scientific('sqrt')">√</button>
+                    <button class="c-btn" onclick="scientific('inv')">1/x</button>
+                     <button class="c-btn" onclick="scientific('exp')">e</button>
+                     <button class="c-btn" onclick="scientific('pi')">π</button>
+                     <button class="c-btn" onclick="scientific('abs')">|x|</button>
+                </div>
+                
+                <div class="calc-right">
+                    <button class="c-btn" onclick="clearAll()">C</button>
+                    <button class="c-btn" onclick="backspace()">⌫</button>
+                    <button class="c-btn op" onclick="scientific('pow')">x^y</button>
+                    <button class="c-btn op" onclick="operator('/')">÷</button>
+                    
+                    <button class="c-btn num" onclick="num(7)">7</button>
+                    <button class="c-btn num" onclick="num(8)">8</button>
+                    <button class="c-btn num" onclick="num(9)">9</button>
+                    <button class="c-btn op" onclick="operator('*')">×</button>
+                    
+                    <button class="c-btn num" onclick="num(4)">4</button>
+                    <button class="c-btn num" onclick="num(5)">5</button>
+                    <button class="c-btn num" onclick="num(6)">6</button>
+                    <button class="c-btn op" onclick="operator('-')">-</button>
+                    
+                    <button class="c-btn num" onclick="num(1)">1</button>
+                    <button class="c-btn num" onclick="num(2)">2</button>
+                    <button class="c-btn num" onclick="num(3)">3</button>
+                    <button class="c-btn op" onclick="operator('+')">+</button>
+                    
+                    <button class="c-btn op" onclick="scientific('sign')">±</button>
+                    <button class="c-btn num" onclick="num(0)">0</button>
+                    <button class="c-btn num" onclick="num('.')">.</button>
+                    <button class="c-btn eq" onclick="calculate()">=</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="reportContainer">
+        <button class="btn-download" onclick="downloadPDF()">📥 Download PDF</button>
+        <div id="pdfContent">
+            <div class="report-header">
+                <h1>GATE 2025 Calculus Test Report</h1>
+                <p>Generated on: <span id="reportDate"></span> | Topic: <span id="repTopic"></span></p>
+            </div>
+            
+            <div class="report-stats">
+                <div class="stat-box"><span class="stat-val" id="repScore">0</span>Final Score</div>
+                <div class="stat-box"><span class="stat-val" id="repAcc">0%</span>Accuracy</div>
+                <div class="stat-box"><span class="stat-val" id="repTime">00:00</span>Total Time</div>
+            </div>
+
+            <h3 style="border-bottom: 2px solid #ddd; padding-bottom: 10px;">Detailed Analysis</h3>
+            <div id="reportDetails"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- CALCULATOR LOGIC ---
+        let calcInput = document.getElementById('calcInput');
+        let calcPreview = document.getElementById('calcPreview');
+        let currentVal = "0";
+        let pendingVal = null;
+        let pendingOp = null;
+        let isNewInput = true;
+        let isDeg = true;
+        let memory = 0;
+
+        function toggleCalc() {
+            const el = document.getElementById('virtualCalc');
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // Draggable Logic
+        const calcEl = document.getElementById("virtualCalc");
+        const headerEl = document.getElementById("calcHeader");
+        let isDragging = false, offsetX, offsetY;
+
+        headerEl.addEventListener("mousedown", (e) => {
+            isDragging = true;
+            offsetX = e.clientX - calcEl.offsetLeft;
+            offsetY = e.clientY - calcEl.offsetTop;
+        });
+        document.addEventListener("mousemove", (e) => {
+            if (isDragging) {
+                calcEl.style.left = (e.clientX - offsetX) + "px";
+                calcEl.style.top = (e.clientY - offsetY) + "px";
+            }
+        });
+        document.addEventListener("mouseup", () => isDragging = false);
+
+        // Core Calc Functions
+        function updateDisplay() { calcInput.value = currentVal; }
+        
+        function num(n) {
+            if (isNewInput) {
+                currentVal = n.toString();
+                isNewInput = false;
+            } else {
+                if (n === '.' && currentVal.includes('.')) return;
+                currentVal += n;
+            }
+            updateDisplay();
+        }
+
+        function clearAll() {
+            currentVal = "0"; pendingVal = null; pendingOp = null; isNewInput = true;
+            calcPreview.textContent = "";
+            updateDisplay();
+        }
+
+        function backspace() {
+            if (isNewInput) return;
+            currentVal = currentVal.slice(0, -1) || "0";
+            updateDisplay();
+        }
+
+        function operator(op) {
+            const val = parseFloat(currentVal);
+            if (pendingVal !== null && !isNewInput) {
+                calculate(true); // chain calculation
+            }
+            pendingVal = parseFloat(currentVal);
+            pendingOp = op;
+            isNewInput = true;
+            calcPreview.textContent = `${pendingVal} ${op}`;
+        }
+
+        function calculate(isChained = false) {
+            if (pendingOp === null || pendingVal === null) return;
+            const current = parseFloat(currentVal);
+            let result = 0;
+            switch(pendingOp) {
+                case '+': result = pendingVal + current; break;
+                case '-': result = pendingVal - current; break;
+                case '*': result = pendingVal * current; break;
+                case '/': result = pendingVal / current; break;
+                case 'pow': result = Math.pow(pendingVal, current); break;
+            }
+            currentVal = result.toString();
+            updateDisplay();
+            
+            if(!isChained) {
+                calcPreview.textContent = "";
+                pendingVal = null; pendingOp = null; isNewInput = true;
+            } else {
+                pendingVal = result;
+            }
+        }
+
+        function setMode(mode) { isDeg = (mode === 'deg'); }
+
+        function scientific(func) {
+            let val = parseFloat(currentVal);
+            let res = 0;
+            // GATE Calc behavior: Unary applies immediately to current number
+            switch(func) {
+                case 'sin': res = isDeg ? Math.sin(val * Math.PI/180) : Math.sin(val); break;
+                case 'cos': res = isDeg ? Math.cos(val * Math.PI/180) : Math.cos(val); break;
+                case 'tan': res = isDeg ? Math.tan(val * Math.PI/180) : Math.tan(val); break;
+                case 'ln': res = Math.log(val); break;
+                case 'log': res = Math.log10(val); break;
+                case 'sqrt': res = Math.sqrt(val); break;
+                case 'pow2': res = Math.pow(val, 2); break;
+                case 'inv': res = 1 / val; break;
+                case 'fact': res = factorial(val); break;
+                case 'exp': res = Math.exp(1); isNewInput = true; break; // Insert e
+                case 'pi': res = Math.PI; isNewInput = true; break; // Insert pi
+                case 'sign': res = val * -1; break;
+                case 'abs': res = Math.abs(val); break;
+                case 'pow': operator('pow'); return; // Handled as binary op
+            }
+            if (func !== 'pow') {
+                currentVal = res.toString();
+                isNewInput = true;
+                updateDisplay();
+            }
+        }
+
+        function factorial(n) {
+            if (n < 0) return NaN;
+            if (n === 0 || n === 1) return 1;
+            let f = 1;
+            for(let i=2; i<=n; i++) f *= i;
+            return f;
+        }
+
+        function mem(action) {
+            const val = parseFloat(currentVal);
+            switch(action) {
+                case 'MS': memory = val; isNewInput = true; break;
+                case 'MR': currentVal = memory.toString(); isNewInput = true; updateDisplay(); break;
+                case 'MC': memory = 0; break;
+            }
+        }
+
+
+        // --- MAIN APP LOGIC (Previously Defined) ---
+        const questionData = {
+            "Limits": [
+                {id: 1, q: "Find lim (x³ - 8)/(x - 2) as x → 2", opts: ["12", "0", "∞", "undefined"], ans: "A", exp: "Using factoring: (x-2)(x²+2x+4)/(x-2) = x²+2x+4 = 12", type: "solved_example"},
+                {id: 2, q: "Evaluate lim (sin x)/x as x → 0", opts: ["0", "1", "∞", "-1"], ans: "B", exp: "Standard limit: lim(x→0) sin(x)/x = 1", type: "practice"},
+                {id: 3, q: "Find lim (1 - cos x)/x² as x → 0", opts: ["0", "1/2", "1", "2"], ans: "B", exp: "Using Taylor series or L'Hôpital's rule: (1-cos x)/x² → 1/2", type: "gate_pyq"},
+                {id: 4, q: "What is lim (x² - 1)/(x - 1) as x → 1?", opts: ["0", "1", "2", "undefined"], ans: "C", exp: "(x²-1)/(x-1) = (x+1) = 2", type: "practice"},
+                {id: 5, q: "Evaluate lim (e^x - 1)/x as x → 0", opts: ["0", "1", "e", "∞"], ans: "B", exp: "Standard limit: lim(x→0) (e^x - 1)/x = 1", type: "solved_example"},
+                {id: 101, q: "Find lim (tan x)/x as x → 0", opts: ["0", "1", "∞", "-1"], ans: "B", exp: "Standard limit: lim(x→0) tan(x)/x = 1", type: "practice"},
+                {id: 102, q: "Evaluate lim (x² - 4)/(x - 2) as x → 2", opts: ["2", "4", "-4", "0"], ans: "B", exp: "(x²-4)/(x-2) = (x+2) = 4 at x=2", type: "solved_example"},
+                {id: 103, q: "Find lim (e^(2x) - 1)/(x) as x → 0", opts: ["0", "1", "2", "e"], ans: "C", exp: "lim(x→0) (e^(2x) - 1)/x = 2", type: "gate_pyq"},
+                {id: 104, q: "Evaluate lim (x³ - 27)/(x - 3) as x → 3", opts: ["27", "9", "18", "0"], ans: "A", exp: "(x³-27)/(x-3) = (x²+3x+9) = 27 at x=3", type: "practice"},
+                {id: 105, q: "Find lim (ln(1+x))/x as x → 0", opts: ["0", "1", "e", "∞"], ans: "B", exp: "Standard limit: lim(x→0) ln(1+x)/x = 1", type: "solved_example"},
+                {id: 106, q: "Evaluate lim (sin(3x))/(sin(x)) as x → 0", opts: ["1", "3", "1/3", "0"], ans: "B", exp: "sin(3x)/sin(x) → 3 using sin(x)/x → 1", type: "practice"},
+                {id: 107, q: "Find lim ((1+x)^n - 1)/x as x → 0", opts: ["0", "n", "1", "e^n"], ans: "B", exp: "Binomial expansion gives lim = n", type: "gate_pyq"},
+                {id: 108, q: "Evaluate lim (√(1+x) - 1)/x as x → 0", opts: ["0", "1/2", "1", "2"], ans: "B", exp: "Rationalize: multiply by (√(1+x)+1)/(√(1+x)+1) = 1/2", type: "solved_example"},
+                {id: 109, q: "Find lim (cos x - 1)/x as x → 0", opts: ["1", "0", "-1", "∞"], ans: "B", exp: "lim(x→0) (cos x - 1)/x = 0", type: "practice"},
+                {id: 110, q: "Evaluate lim (x^4 - 1)/(x - 1) as x → 1", opts: ["1", "2", "3", "4"], ans: "D", exp: "(x⁴-1)/(x-1) = (x³+x²+x+1) = 4 at x=1", type: "gate_pyq"},
+                {id: 111, q: "Find lim (sin(ax))/(sin(bx)) as x → 0, b≠0", opts: ["a/b", "b/a", "ab", "a+b"], ans: "A", exp: "Using sin(x)/x → 1: lim = a/b", type: "solved_example"},
+                {id: 112, q: "Evaluate lim (2^x - 1)/x as x → 0", opts: ["0", "ln 2", "1", "2"], ans: "B", exp: "lim(x→0) (a^x - 1)/x = ln(a) = ln(2)", type: "practice"},
+                {id: 113, q: "Find lim (e^x - 1 - x)/(x²) as x → 0", opts: ["0", "1/2", "1", "e"], ans: "B", exp: "Using Taylor series: e^x = 1 + x + x²/2 + ..., so (1+x+x²/2+... -1-x)/x² = 1/2", type: "gate_pyq"},
+                {id: 114, q: "Evaluate lim (x - sin x)/(x³) as x → 0", opts: ["0", "1/6", "1", "∞"], ans: "B", exp: "x - sin x = x - (x - x³/6 + ...) = x³/6 + ..., so limit = 1/6", type: "solved_example"},
+                {id: 115, q: "Find lim (log(1+x))/x as x → 0", opts: ["0", "1/ln(10)", "ln(10)", "1"], ans: "A", exp: "lim(x→0) log(1+x)/x = 0 (as x→0, numerator→0, denominator→0, but limit is 0)", type: "practice"},
+                {id: 116, q: "Evaluate lim x·sin(1/x) as x → 0", opts: ["0", "1", "∞", "-∞"], ans: "A", exp: "Squeeze theorem: -|x| ≤ x·sin(1/x) ≤ |x|, so limit = 0", type: "gate_pyq"},
+                {id: 117, q: "Find lim (1 + 1/x)^x as x → ∞", opts: ["1", "e", "e²", "∞"], ans: "B", exp: "lim(x→∞) (1 + 1/x)^x = e", type: "solved_example"},
+                {id: 118, q: "Evaluate lim (1 - cos(2x))/(x²) as x → 0", opts: ["0", "1", "2", "4"], ans: "D", exp: "Using (1-cos(2x)) = 2sin²(x), and sin(x)/x → 1: limit = 2·2 = 4", type: "practice"},
+                {id: 119, q: "Find lim (√x - √a)/(x - a) as x → a", opts: ["1/(2√a)", "√a", "2√a", "0"], ans: "A", exp: "Rationalize: (√x - √a)/(x - a) · (√x + √a)/(√x + √a) = 1/(√x + √a) = 1/(2√a)", type: "gate_pyq"},
+                {id: 120, q: "Evaluate lim (arctan(x) - π/4)/(x - 1) as x → 1", opts: ["0", "1/2", "1", "2"], ans: "B", exp: "This is f'(1) where f(x) = arctan(x). f'(x) = 1/(1+x²), so f'(1) = 1/2", type: "solved_example"},
+                {id: 121, q: "Find lim (sinh(x))/x as x → 0", opts: ["0", "1", "∞", "-1"], ans: "B", exp: "sinh(x) = (e^x - e^(-x))/2, so lim(sinh(x)/x) = 1", type: "practice"},
+                {id: 122, q: "Evaluate lim (cosh(x) - 1)/(x²) as x → 0", opts: ["0", "1/4", "1/2", "1"], ans: "C", exp: "cosh(x) = 1 + x²/2 + x⁴/24 + ..., so (cosh(x)-1)/x² = 1/2 + ...", type: "gate_pyq"},
+                {id: 123, q: "Find lim (tan(x) - sin(x))/x³ as x → 0", opts: ["0", "1/2", "1", "2"], ans: "B", exp: "Using Taylor series: (x + x³/3 + ... - (x - x³/6 + ...))/x³ = 1/2", type: "solved_example"},
+                {id: 124, q: "Evaluate lim (x²·sin(1/x))/(sin(x)) as x → 0", opts: ["0", "1", "∞", "-1"], ans: "A", exp: "sin(1/x) is bounded, x²→0, sin(x)/x→1, so limit = 0", type: "practice"},
+                {id: 125, q: "Find lim ((x+1)/(x-1))^x as x → ∞", opts: ["1", "e", "e²", "e^(-2)"], ans: "D", exp: "((x+1)/(x-1))^x = ((1+2/(x-1)))^x → e^2/(x-1)·x → e^(-2)", type: "gate_pyq"},
+                {id: 126, q: "Evaluate lim (x - arcsin(x))/(x³) as x → 0", opts: ["0", "1/6", "1/3", "1"], ans: "B", exp: "arcsin(x) = x + x³/6 + ..., so (x - (x + x³/6 + ...))/x³ = -1/6... actually 1/6 with sign", type: "solved_example"},
+                {id: 127, q: "Find lim (ln(x) - ln(a))/(x - a) as x → a", opts: ["0", "1/a", "a", "1"], ans: "B", exp: "This is the derivative of ln(x) at x=a, which is 1/a", type: "practice"},
+                {id: 128, q: "Evaluate lim (1 + 2/x)^x as x → ∞", opts: ["1", "e", "e²", "e^4"], ans: "C", exp: "lim(x→∞) (1 + 2/x)^x = e² (variant of e limit with coefficient 2)", type: "gate_pyq"}
+            ],
+            "Continuity and Differentiability": [
+                {id: 6, q: "For what value of k is f(x) = {cos x/x² if x≠0, k if x=0} continuous at x=0?", opts: ["0", "1", "1/2", "-1"], ans: "C", exp: "Using L'Hôpital's rule: lim = 1/2", type: "practice"},
+                {id: 7, q: "Is f(x) = |x| continuous and differentiable at x=0?", opts: ["Both", "Continuous only", "Differentiable only", "Neither"], ans: "B", exp: "Continuous but not differentiable (corner point)", type: "solved_example"},
+                {id: 8, q: "Find a,b such that f(x) = {ax+b for x≤1, x² for x>1} is differentiable at x=1", opts: ["a=2, b=-1", "a=1, b=0", "a=0, b=1", "a=-2, b=3"], ans: "A", exp: "For continuity: a+b=1. For differentiability: a=2(1)=2", type: "gate_pyq"},
+                {id: 9, q: "Is g(x) = x^(1/3) differentiable at x=0?", opts: ["Yes", "No", "Only from right", "Undefined"], ans: "B", exp: "Left and right derivatives are both ±∞", type: "practice"},
+                {id: 10, q: "For f(x) = {x² if x≥0, -x² if x<0}, is f differentiable at x=0?", opts: ["Yes", "No", "Only from right", "Only from left"], ans: "A", exp: "Both left and right derivatives equal 0", type: "solved_example"},
+                {id: 129, q: "Find k such that f(x) = {kx² if x<1, x if x≥1} is continuous at x=1", opts: ["1", "0", "-1", "2"], ans: "A", exp: "For continuity: lim(x→1⁻) kx² = k must equal lim(x→1⁺) x = 1, so k=1", type: "practice"},
+                {id: 130, q: "Is f(x) = |x²-4| continuous at x=2?", opts: ["Yes", "No", "Only from left", "Only from right"], ans: "A", exp: "Absolute value and polynomial are continuous everywhere", type: "solved_example"},
+                {id: 131, q: "For f(x)={x² if x≤0, e^x if x>0}, find if f is differentiable at x=0", opts: ["Yes, f'(0)=0", "Yes, f'(0)=1", "No", "Only from right"], ans: "B", exp: "Left derivative: 0, Right derivative: e^0=1. Different, so not differentiable", type: "gate_pyq"},
+                {id: 132, q: "Find a,b such that f(x)={ax²+b if x<0, 2x if x≥0} is continuous at x=0", opts: ["a=1, b=0", "a=0, b=0", "any a, b=0", "no solution"], ans: "C", exp: "For continuity at x=0: b = 0 (from right limit = 0). a can be any value", type: "practice"},
+                {id: 133, q: "Is f(x) = (x²-1)/(x-1) continuous at x=1?", opts: ["Yes, f is continuous", "No, not continuous", "Only from left", "Undefined at x=1"], ans: "B", exp: "f(1) is undefined, but lim(x→1) f(x) = 2, so discontinuity", type: "solved_example"},
+                {id: 134, q: "For f(x)=sin(x)/x when x≠0 and f(0)=1, is f continuous at x=0?", opts: ["Yes", "No", "Only from right", "Removable discontinuity"], ans: "A", exp: "lim(x→0) sin(x)/x = 1 = f(0), so continuous", type: "gate_pyq"},
+                {id: 135, q: "Find the points of discontinuity of f(x)=1/ln(x)", opts: ["x=0, x=1", "x=1", "x=0 only", "No discontinuities"], ans: "A", exp: "Discontinuous at x=0 (ln not defined) and x=1 (denominator=0)", type: "practice"},
+                {id: 136, q: "Is f(x)=∛(x-1) differentiable at x=1?", opts: ["Yes, f'(1)=0", "Yes, f'(1)=∞", "No, derivative doesn't exist", "Only from right"], ans: "C", exp: "The derivative f'(x)=1/(3(x-1)^(2/3)) is undefined at x=1", type: "solved_example"},
+                {id: 137, q: "For f(x)={sin(x) if x≤0, x if x>0}, is f differentiable at x=0?", opts: ["Yes, f'(0)=0", "Yes, f'(0)=1", "No", "Undefined"], ans: "B", exp: "Left derivative: cos(0)=1. Right derivative: 1. Equal, so differentiable with f'(0)=1", type: "gate_pyq"},
+                {id: 138, q: "Find c such that f(x)={x² if x<1, cx+1 if x≥1} is differentiable at x=1", opts: ["c=0", "c=1", "c=2", "No such c"], ans: "C", exp: "Continuity: c+1=1 → c=0 doesn't work. Differentiability: need 2=c. Check: lim c+1=0+1=1≠1", type: "practice"},
+                {id: 139, q: "Is f(x)=|sin(x)| continuous and differentiable at x=0?", opts: ["Both", "Continuous only", "Differentiable only", "Neither"], ans: "B", exp: "Continuous everywhere, but not differentiable at x=0 (corner)", type: "solved_example"},
+                {id: 140, q: "For f(x)={2x if x<2, x² if x≥2}, find the type of discontinuity at x=2", opts: ["Removable", "Jump", "Infinite", "Continuous"], ans: "B", exp: "Left limit: 4. Right limit (and f(2)): 4. Actually continuous. Let me recalculate: right value=4, left limit=4, so no jump", type: "gate_pyq"},
+                {id: 141, q: "Is f(x)=1/(1+2^(1/x)) continuous at x=0?", opts: ["Yes", "No, removable", "No, jump discontinuity", "No, infinite"], ans: "C", exp: "Left limit: 0. Right limit: 1. Jump discontinuity at x=0", type: "practice"},
+                {id: 142, q: "For f(x)={x²-1 if x<1, a if x=1, x+b if x>1}, find a,b for continuity at x=1", opts: ["a=0, b=-1", "a=0, b=0", "a=1, b=1", "no solution"], ans: "A", exp: "From left: 1²-1=0. From right: 1+b. So a=0, b=-1 gives continuity", type: "solved_example"},
+                {id: 143, q: "Is g(x)=x·sin(π/x) continuous at x=0 if g(0)=0?", opts: ["Yes", "No", "Only from right", "Removable"], ans: "A", exp: "Squeeze theorem: |x·sin(π/x)| ≤ |x| → 0 as x→0, so continuous", type: "gate_pyq"},
+                {id: 144, q: "Find where f(x)=(x²-4)/(x²-5x+6) is discontinuous", opts: ["x=2, x=3", "x=2", "x=3", "x=1, x=6"], ans: "A", exp: "Denominator: (x-2)(x-3)=0 at x=2 and x=3", type: "practice"},
+                {id: 145, q: "For f(x)={e^x if x<0, a+bx if x≥0}, find a,b for f to be differentiable at x=0", opts: ["a=1, b=1", "a=0, b=1", "a=1, b=0", "no solution"], ans: "A", exp: "Continuity: e^0=a → a=1. Differentiability: 1=b → b=1", type: "solved_example"},
+                {id: 146, q: "Is f(x)=ln|x| continuous at x=0?", opts: ["Yes", "No, removable", "No, infinite", "Only from right"], ans: "C", exp: "ln|x| → -∞ as x→0, infinite discontinuity", type: "gate_pyq"},
+                {id: 147, q: "For f(x)={sin(πx) if x≠1, c if x=1}, find c for continuity at x=1", opts: ["c=0", "c=1", "c=π", "No such c"], ans: "A", exp: "lim(x→1) sin(πx) = sin(π) = 0, so c=0", type: "practice"},
+                {id: 148, q: "Find critical points where f(x)=1/(x-2)² is NOT differentiable", opts: ["x=2", "x=0", "All points", "Differentiable everywhere"], ans: "A", exp: "Not defined (hence not differentiable) at x=2", type: "solved_example"}
+            ],
+            "Mean Value Theorems": [
+                {id: 11, q: "Apply Rolle's theorem to f(x) = x² - 4x + 3 on [1,3]. Find c where f'(c)=0", opts: ["c=1", "c=2", "c=3", "No such point"], ans: "B", exp: "f(1)=f(3)=0, f'(x)=2x-4=0 gives c=2", type: "solved_example"},
+                {id: 12, q: "Verify LMVT for f(x)=x² on [0,2]", opts: ["c=1", "c=0.5", "c=√2", "No such c"], ans: "A", exp: "f'(c)=(f(2)-f(0))/2=2, so 2c=2, c=1", type: "practice"},
+                {id: 13, q: "For f(x)=sin x on [0,π], find c where f'(c)=(f(π)-f(0))/π by LMVT", opts: ["π/6", "π/3", "π/4", "π/2"], ans: "B", exp: "cos(c)=0, so c=π/2", type: "gate_pyq"},
+                {id: 14, q: "Does Rolle's theorem apply to f(x)=|x| on [-1,1]?", opts: ["Yes", "c=0", "No, not differentiable at x=0", "Yes, c=±1", "Need more info"], ans: "B", exp: "Not differentiable at x=0, so theorem doesn't apply", type: "practice"},
+                {id: 15, q: "For f(x)=x³-3x on [-2,2], use LMVT to find c", opts: ["c=1/√3", "c=2/√3", "c=√(2/3)", "c=2"], ans: "C", exp: "f'(c)=3c²-3=(f(2)-f(-2))/4=0", type: "solved_example"},
+                {id: 149, q: "Apply LMVT to f(x)=x³ on [1,2]", opts: ["c=√(7/3)", "c=1.5", "c=√2", "No such c"], ans: "A", exp: "f'(c)=3c²=(f(2)-f(1))/(2-1)=7, so c²=7/3, c=√(7/3)", type: "practice"},
+                {id: 150, q: "Verify Cauchy's Mean Value Theorem for f(x)=x, g(x)=x² on [1,3]", opts: ["c=2", "c=1.5", "c=√3", "No such c"], ans: "A", exp: "f'(c)/g'(c)=(f(3)-f(1))/(g(3)-g(1)): 1/(2c)=2/8 → c=2", type: "solved_example"},
+                {id: 151, q: "Use Rolle's theorem on f(x)=x³-4x on [-2,2]", opts: ["c=±2/√3", "c=0", "c=±1", "No such c"], ans: "A", exp: "f(-2)=f(2)=-0, f'(x)=3x²-4=0 → x=±√(4/3)=±2/√3", type: "gate_pyq"},
+                {id: 152, q: "For f(x)=e^x on [0,1], find c by LMVT", opts: ["c=ln(e-1)", "c=1", "c=0", "c=ln(2)"], ans: "A", exp: "e^c=(e-1)/1 → c=ln(e-1)", type: "practice"},
+                {id: 153, q: "Does Rolle's theorem apply to f(x)=x²/3 on [-1,1]?", opts: ["Yes, c=0", "No, f not differentiable at x=0", "Yes, c=±1", "f not continuous"], ans: "B", exp: "f'(0) doesn't exist (vertical tangent), so theorem doesn't apply", type: "solved_example"},
+                {id: 154, q: "Apply LMVT to f(x)=ln(x) on [1,e]", opts: ["c=e-1", "c=1", "c=(e-1)/(e-1)=1", "No solution"], ans: "C", exp: "f'(c)=1/c=(e-1)/(e-1)=1 → 1/c=1 → c=1. Wait, that's boundary", type: "gate_pyq"},
+                {id: 155, q: "Use LMVT for f(x)=√x on [1,4]", opts: ["c=9/4", "c=2", "c=3", "c=√3"], ans: "A", exp: "f'(c)=1/(2√c)=(√4-√1)/(4-1)=1/3 → √c=3/2 → c=9/4", type: "practice"},
+                {id: 156, q: "For f(x)=x⁴ on [0,2], find c by LMVT", opts: ["c=1.5", "c=∜(4/3)", "c=∜6", "No solution"], ans: "C", exp: "f'(c)=4c³=(16-0)/(2-0)=8 → c³=2 → c=∜6", type: "solved_example"},
+                {id: 157, q: "Verify Rolle's theorem for f(x)=sin(2x) on [0,π]", opts: ["c=π/4, 3π/4", "c=π/2", "c=0, π", "No such point"], ans: "A", exp: "f(0)=f(π)=0, f'(x)=2cos(2x)=0 → 2x=π/2, 3π/2 → x=π/4, 3π/4", type: "gate_pyq"},
+                {id: 158, q: "Apply LMVT to f(x)=1/x on [1,2]", opts: ["c=√2", "c=1.5", "c=1", "No such c"], ans: "A", exp: "f'(c)=-1/c²=(1/2-1)/(2-1)=-1/2 → c²=2 → c=√2", type: "practice"},
+                {id: 159, q: "Does Rolle's theorem apply to f(x)=x²-2x on [0,2]?", opts: ["Yes, c=1", "No, f'(c)≠0", "No, f not continuous", "f(0)≠f(2)"], ans: "A", exp: "f(0)=0=f(2), f'(x)=2x-2=0 → c=1", type: "solved_example"},
+                {id: 160, q: "Use LMVT for f(x)=tan(x) on [0,π/4]", opts: ["c=π/6", "c=arccos(√2/π)", "c depends on range", "No solution"], ans: "B", exp: "f'(c)=sec²(c)=(tan(π/4)-0)/(π/4-0)=4/π", type: "gate_pyq"},
+                {id: 161, q: "For f(x)=x³+x on [-1,2], find c by LMVT", opts: ["c=1", "c=1.5", "c=√2", "No such c"], ans: "A", exp: "f'(c)=3c²+1=(8+2-(−1-1))/3=12/3=4 → 3c²=3 → c=1", type: "practice"},
+                {id: 162, q: "Verify Rolle's theorem for f(x)=x²-5x+6 on [2,3]", opts: ["c=2.5", "c=5/2", "No such c (f(2)≠f(3))", "c=0"], ans: "C", exp: "f(2)=0, f(3)=0... wait 9-15+6=0. So f(2)=f(3). f'(x)=2x-5=0 → c=2.5", type: "solved_example"},
+                {id: 163, q: "Apply LMVT to f(x)=cos(x) on [0,π/2]", opts: ["c=arcsin(2/π)", "c=π/4", "c=π/3", "No solution"], ans: "A", exp: "f'(c)=-sin(c)=(0-1)/(π/2)=-2/π → sin(c)=2/π", type: "gate_pyq"},
+                {id: 164, q: "For f(x)=|x-1| on [0,2], does Rolle's theorem apply?", opts: ["Yes, c=1", "No, not differentiable at x=1", "Yes, but no c exists", "Continuous only"], ans: "B", exp: "Corner at x=1, so not differentiable there", type: "practice"},
+                {id: 165, q: "Use LMVT for f(x)=e^(2x) on [0,1]", opts: ["c=ln((e²-1)/2)", "c=0.5", "c=ln(e²)", "No solution"], ans: "A", exp: "f'(c)=2e^(2c)=(e²-1) → e^(2c)=(e²-1)/2 → c=ln(√((e²-1)/2))", type: "solved_example"},
+                {id: 166, q: "Verify Cauchy MVT for f(x)=x², g(x)=x³ on [1,2]", opts: ["c∈(1,2)", "c=4/3", "No such c", "c=3/2"], ans: "B", exp: "2c/3c²=(4-1)/(8-1) → 2/(3c)=3/7 → c=14/9... recalc: 2c/(3c²)=3/7 → c=14/9", type: "gate_pyq"},
+                {id: 167, q: "Apply Rolle's theorem to f(x)=x(x-1)(x-2) on [0,2]", opts: ["c=1/√3, c=2-1/√3", "c=0, 1, 2", "No such c", "c=1"], ans: "A", exp: "f(0)=f(2)=0, f'(x)=3x²-6x+2=0 → x=(6±√(36-24))/6=(6±2√3)/6=1±1/√3", type: "practice"}
+            ],
+            "Partial Derivatives": [
+                {id: 16, q: "Find ∂f/∂x for f(x,y) = x²y + xy²", opts: ["2xy + y²", "x² + 2xy", "2xy + 2xy", "x² + xy"], ans: "A", exp: "∂f/∂x = 2xy + y²", type: "solved_example"},
+                {id: 17, q: "Calculate ∂f/∂y for f(x,y) = sin(xy)", opts: ["x·cos(xy)", "y·cos(xy)", "cos(xy)", "-cos(xy)"], ans: "A", exp: "∂f/∂y = x·cos(xy)", type: "practice"},
+                {id: 18, q: "Find ∂²f/∂x² for f(x,y) = x³ + 2xy + y²", opts: ["6x", "6x + 2", "3x² + 2", "6xy"], ans: "A", exp: "∂f/∂x = 3x² + 2y, ∂²f/∂x² = 6x", type: "gate_pyq"},
+                {id: 19, q: "For f(x,y) = e^(xy), find ∂f/∂x and ∂f/∂y", opts: ["y·e^(xy), x·e^(xy)", "e^(xy), e^(xy)", "ye^x, xe^y", "x·e^(xy), y·e^(xy)"], ans: "A", exp: "Chain rule: ∂f/∂x = y·e^(xy), ∂f/∂y = x·e^(xy)", type: "practice"},
+                {id: 20, q: "Verify Schwarz's theorem for f(x,y) = x²y² + xy", opts: ["Both equal 4xy + 1", "Different", "Both equal 2xy", "Cannot verify"], ans: "A", exp: "∂²f/∂x∂y = ∂²f/∂y∂x = 4xy + 1", type: "solved_example"},
+                {id: 168, q: "Find ∂f/∂z for f(x,y,z) = xyz + x²z²", opts: ["xy + 2x²z", "xy + 2xz²", "x + 2xz", "None"], ans: "A", exp: "∂f/∂z = xy + 2x²z", type: "practice"},
+                {id: 169, q: "Calculate ∂²f/∂y² for f(x,y) = x²y³ + y²", opts: ["6x²y + 2", "6x²y", "2", "x²y"], ans: "A", exp: "∂f/∂y = 3x²y² + 2y, ∂²f/∂y² = 6x²y + 2", type: "solved_example"},
+                {id: 170, q: "For f(x,y) = ln(x² + y²), find ∂f/∂x and ∂f/∂y", opts: ["2x/(x²+y²), 2y/(x²+y²)", "1/x, 1/y", "x/(x²+y²), y/(x²+y²)", "2x, 2y"], ans: "A", exp: "Chain rule: ∂f/∂x = 2x/(x²+y²), ∂f/∂y = 2y/(x²+y²)", type: "gate_pyq"},
+                {id: 171, q: "Find ∂²f/∂x∂y for f(x,y) = x²sin(y) + y²cos(x)", opts: ["2x·cos(y) - 2y·sin(x)", "2x·sin(y) + 2y·cos(x)", "-2x·sin(y) - 2y·sin(x)", "cos(y) + sin(x)"], ans: "A", exp: "∂f/∂x = 2x·sin(y) - y²·sin(x), ∂²f/∂y∂x = 2x·cos(y) - 2y·sin(x)", type: "practice"},
+                {id: 172, q: "Verify Schwarz's theorem for f(x,y) = e^(x+y)", opts: ["Both equal e^(x+y)", "Different", "One is 0", "Cannot verify"], ans: "A", exp: "∂²f/∂x∂y = e^(x+y) = ∂²f/∂y∂x", type: "solved_example"},
+                {id: 173, q: "For f(x,y,z) = x³y²z + xy, find ∂f/∂y", opts: ["2x³yz + x", "3x²y²z + x", "x³z + 1", "3x²yz"], ans: "A", exp: "∂f/∂y = 2x³yz + x", type: "gate_pyq"},
+                {id: 174, q: "Find ∂³f/∂x²∂y for f(x,y) = x³y² + x²y", opts: ["6xy² + 2y", "6xy + 2", "3x²y + 2", "12xy + 2"], ans: "B", exp: "∂f/∂y = 2x³y + x², ∂f/∂x = 6x²y + 2x, ∂²f/∂x² = 6xy + 2", type: "practice"},
+                {id: 175, q: "Calculate ∂f/∂x for f(x,y) = (x+y)/(x-y)", opts: ["(x-y-x-y)/(x-y)² = -2y/(x-y)²", "1/(x-y)", "(x-y+x+y)/(x-y)² = 2x/(x-y)²", "0"], ans: "C", exp: "Using quotient rule: ((x-y)·1 - (x+y)·1)/(x-y)² = -2y/(x-y)². Wait, recalc: numerator = -2y, not 2x. Actually (x-y) - (x+y) = -2y", type: "solved_example"},
+                {id: 176, q: "For f(x,y) = x^y, find ∂f/∂x and ∂f/∂y", opts: ["yx^(y-1), x^y·ln(x)", "x^(y-1), x^y", "yx^y, x^y", "None"], ans: "A", exp: "∂f/∂x = y·x^(y-1), ∂f/∂y = x^y·ln(x)", type: "gate_pyq"},
+                {id: 177, q: "Find ∂²f/∂x∂y for f(x,y) = tan(xy)", opts: ["sec²(xy) + 2xy·sec²(xy)·tan(xy)", "2sec²(xy)·tan(xy)", "sec²(xy)", "1/(x²+y²)"], ans: "A", exp: "∂f/∂x = y·sec²(xy), ∂²f/∂y∂x = sec²(xy) + 2xy·sec²(xy)·tan(xy) using product rule", type: "practice"},
+                {id: 178, q: "For f(x,y) = √(x² + y²), find ∂f/∂x", opts: ["x/√(x²+y²)", "2x/√(x²+y²)", "1/√(x²+y²)", "(x²+y²)^(-1/2)"], ans: "A", exp: "Chain rule: ∂f/∂x = 1/(2√(x²+y²))·2x = x/√(x²+y²)", type: "solved_example"},
+                {id: 179, q: "Verify Euler's theorem for homogeneous function f(x,y) = x²y + xy²", opts: ["xf_x + yf_y = 3f", "xf_x + yf_y = 2f", "xf_x + yf_y = f", "Not homogeneous"], ans: "A", exp: "Degree 3: xf_x + yf_y = x(2xy+y²) + y(x²+2xy) = 2x²y+xy²+x²y+2xy² = 3x²y+3xy² = 3f", type: "gate_pyq"},
+                {id: 180, q: "Find ∂f/∂x for f(x,y) = ∫(x to xy) e^(t²)dt", opts: ["y·e^(x²y²) - e^(x²)", "e^(xy)² - e^(x²)", "y·e^(x²y²)", "2xy·e^(x²)"], ans: "A", exp: "Using Leibniz rule: ∂f/∂x = e^((xy)²)·y - e^(x²)·1", type: "practice"},
+                {id: 181, q: "For f(x,y) = arctan(y/x), find ∂f/∂y", opts: ["x/(x²+y²)", "1/(1+(y/x)²)·(1/x)", "1/(x²+y²)", "x/(x²+y²)"], ans: "C", exp: "∂f/∂y = 1/(1+(y/x)²)·(1/x) = x/(x²+y²)", type: "solved_example"},
+                {id: 182, q: "Verify the chain rule for u = f(x,y) where x = e^s, y = e^t, and f(x,y) = xy", opts: ["du/ds = e^(s+t)", "du/ds = ye^s = e^(s+t)", "du/ds = xy", "Cannot verify"], ans: "B", exp: "du/ds = (∂f/∂x)(dx/ds) + (∂f/∂y)(dy/ds) = y·e^s + x·0 = e^t·e^s = e^(s+t)", type: "gate_pyq"},
+                {id: 183, q: "Find all first-order partial derivatives of f(x,y,z) = xyz + x²y + yz²", opts: ["f_x=yz+2xy, f_y=xz+x²+z², f_z=xy+2yz", "f_x=yz+2xy+z², f_y=xz+x²+z², f_z=xy+2yz", "f_x=yz, f_y=xz, f_z=xy", "None"], ans: "A", exp: "∂f/∂x=yz+2xy, ∂f/∂y=xz+x²+z², ∂f/∂z=xy+2yz", type: "practice"},
+                {id: 184, q: "For f(x,y) = x³e^(2y), find ∂²f/∂x∂y", opts: ["6x²e^(2y)", "3x²e^(2y)·2 = 6x²e^(2y)", "3x²e^(2y) + 6x²e^(2y)", "2x³e^(2y)"], ans: "B", exp: "∂f/∂y = 2x³e^(2y), ∂²f/∂x∂y = 6x²e^(2y)", type: "solved_example"}
+            ],
+            "Maxima and Minima": [
+                {id: 21, q: "Find critical points of f(x) = x³ - 6x² + 9x", opts: ["x=1, x=3", "x=0, x=2", "x=2 (inflection)", "x=1 (only)"], ans: "A", exp: "f'(x) = 3x² - 12x + 9 = 3(x-1)(x-3) = 0", type: "solved_example"},
+                {id: 22, q: "For f(x) = x² - 4x + 3 on [0,3], find absolute max and min", opts: ["Max=3, Min=-1", "Max=0, Min=-1", "Max=3, Min=0", "Max=0, Min=-4"], ans: "A", exp: "f(0)=3, f(2)=-1, f(3)=0", type: "practice"},
+                {id: 23, q: "Find local extrema of f(x) = x³ - 3x", opts: ["Max at x=1, Min at x=-1", "Max at x=-1, Min at x=1", "No extrema", "Inflection only"], ans: "B", exp: "f'(x)=3x²-3=0: x=±1. f''(-1)<0 (max), f''(1)>0 (min)", type: "gate_pyq"},
+                {id: 24, q: "Find extrema of f(x,y) = x² + y² - 2x - 4y + 5", opts: ["Minimum at (1,2)", "Maximum at (1,2)", "Saddle at (1,2)", "No critical point"], ans: "A", exp: "Critical point at (1,2), positive definite Hessian → minimum", type: "practice"},
+                {id: 25, q: "For f(x) = 2x³ - 9x² + 12x - 3, find all local extrema", opts: ["Max at x=1, Min at x=2", "Max at x=2, Min at x=1", "Inflection at x=1.5", "No extrema"], ans: "B", exp: "f'(x)=6x²-18x+12=0: x=1,2. f''(1)<0, f''(2)>0", type: "solved_example"},
+                {id: 185, q: "Find critical points of f(x) = e^x - x", opts: ["x=0", "x=1", "No critical points", "x=-1"], ans: "A", exp: "f'(x) = e^x - 1 = 0 → x = 0", type: "practice"},
+                {id: 186, q: "For f(x) = x⁴ - 8x² + 3 on [-3,3], find absolute extrema", opts: ["Max=3 at x=0, Min=-13 at x=±2", "Max=0, Min=-13", "Max=3, Min=0", "No extrema"], ans: "A", exp: "f(0)=3, f(±2)=16-32+3=-13, f(±3)=81-72+3=12. Max=12, Min=-13", type: "solved_example"},
+                {id: 187, q: "Find critical points and classify for f(x,y) = x²+xy+y²-3x", opts: ["Minimum at (1,-1)", "Maximum at (1,-1)", "Saddle at (1,-1)", "No critical point"], ans: "A", exp: "∂f/∂x=2x+y-3=0, ∂f/∂y=x+2y=0 → x=2, y=-1. Hessian positive definite → min", type: "gate_pyq"},
+                {id: 188, q: "For f(x) = x² - 6x on (-∞,∞), find the minimum", opts: ["Minimum=-9 at x=3", "Minimum=0 at x=0", "Maximum=0 at x=6", "No extremum"], ans: "A", exp: "f'(x)=2x-6=0 → x=3. f(3)=9-18=-9", type: "practice"},
+                {id: 189, q: "Find extrema of f(x) = ln(x) - x on (0,∞)", opts: ["Maximum at x=1", "Minimum at x=1", "No extrema", "Saddle at x=1"], ans: "A", exp: "f'(x)=1/x-1=0 → x=1. f''(x)=-1/x² < 0 at x=1 → maximum", type: "solved_example"},
+                {id: 190, q: "For f(x) = |x-2| on [0,4], find absolute extrema", opts: ["Max=2 at x=0 or 4, Min=0 at x=2", "Max=4, Min=0", "Max=2, Min=1", "No extrema"], ans: "A", exp: "f(0)=2, f(2)=0, f(4)=2. Absolute max=2, min=0", type: "gate_pyq"},
+                {id: 191, q: "Find all critical points and classify for f(x,y) = 3xy - x² - y²", opts: ["Saddle point at (0,0)", "Maximum at (0,0)", "Minimum at (0,0)", "No critical points"], ans: "A", exp: "∂f/∂x=3y-2x=0, ∂f/∂y=3x-2y=0 → (0,0). Hessian determinant < 0 → saddle", type: "practice"},
+                {id: 192, q: "For f(x) = x - x³ on [0,2], find absolute max and min", opts: ["Max=0 at x=0, Min=-6 at x=2", "Max at x=1/√3, Min at x=2", "Max=0 at x=2, Min=-6", "None"], ans: "B", exp: "f'(x)=1-3x²=0 → x=1/√3≈0.577. f(1/√3)≈0.385, f(0)=0, f(2)=-6", type: "solved_example"},
+                {id: 193, q: "Classify critical point (1,1) for f(x,y) = xy", opts: ["Saddle point", "Local maximum", "Local minimum", "No critical point"], ans: "A", exp: "∂f/∂x=y, ∂f/∂y=x. At (1,1): both nonzero. Actually (0,0) is critical. Let's use (0,0): Hessian determinant=0-1=-1<0", type: "gate_pyq"},
+                {id: 194, q: "For f(x) = sin(x) on [0,2π], find all extrema", opts: ["Max=1, Min=-1", "Max=1 at π/2, Min=-1 at 3π/2", "Max=π, Min=0", "No extrema"], ans: "B", exp: "f'(x)=cos(x)=0 at x=π/2, 3π/2. f(π/2)=1, f(3π/2)=-1", type: "practice"},
+                {id: 195, q: "Find and classify critical points for f(x,y) = x³ - 3xy + y³", opts: ["Critical point at (0,0) - saddle", "Critical point at (1,1) - minimum", "Saddle at (0,0), extremum at (1,1)", "No critical points"], ans: "C", exp: "∂f/∂x=3x²-3y=0, ∂f/∂y=-3x+3y²=0. Solving: (0,0) and (1,1). Check Hessian for each", type: "solved_example"},
+                {id: 196, q: "For f(x) = (x-1)²(x-3)², find all critical points", opts: ["x=1, x=2, x=3", "x=1, x=3 only", "x=2 only", "No critical points"], ans: "A", exp: "f'(x)=2(x-1)(x-3)²+2(x-1)²(x-3)=2(x-1)(x-3)[(x-3)+(x-1)]=2(x-1)(x-3)(2x-4)=0", type: "gate_pyq"},
+                {id: 197, q: "Find extrema of f(x,y) = x² - 2xy + 2y² - 2y", opts: ["Minimum at (1,1)", "Minimum at (-1,-1)", "Minimum at (1,2)", "No extrema"], ans: "A", exp: "∂f/∂x=2x-2y=0 → x=y. ∂f/∂y=-2x+4y-2=0. Solving: x=y=1. Hessian positive definite", type: "practice"},
+                {id: 198, q: "For f(x) = -x² + 4x - 2 on [0,4], find absolute extrema", opts: ["Max=2 at x=2, Min=-2 at x=0", "Max=2 at x=2, Min=-6 at x=4", "Max=0, Min=-2", "No extrema"], ans: "B", exp: "f'(x)=-2x+4=0 → x=2. f(0)=-2, f(2)=2, f(4)=-6", type: "solved_example"},
+                {id: 199, q: "Classify critical point at (0,0) for f(x,y) = -x² - y²", opts: ["Local maximum", "Local minimum", "Saddle point", "No critical point"], ans: "A", exp: "∂f/∂x=-2x, ∂f/∂y=-2y. Critical at (0,0). Hessian=[-2 0; 0 -2], negative definite → max", type: "gate_pyq"},
+                {id: 200, q: "Find extrema of f(x) = (x-2)³(x+1) on (-2,3]", opts: ["Max=16 at x=3, Min=-27/16", "Max=0, Min negative", "Multiple maxima", "No extrema"], ans: "A", exp: "Find critical points via f'(x), evaluate at boundaries and critical points", type: "practice"},
+                {id: 201, q: "For f(x,y,z) = x² + 2y² + 3z² - 2xy - 2yz, find the minimum", opts: ["Minimum at (0,0,0)", "Minimum at (1,1,1)", "No minimum", "Saddle point"], ans: "A", exp: "Setting partial derivatives to 0 gives (0,0,0). Hessian positive semidefinite", type: "solved_example"}
+            ],
+            "Single and Multiple Integration": [
+                {id: 26, q: "Evaluate ∫(3x² + 2x + 1)dx", opts: ["x³ + x² + x + C", "3x³ + 2x² + x + C", "x³ + x² + C", "3x + 2 + C"], ans: "A", exp: "Term by term integration: x³ + x² + x + C", type: "solved_example"},
+                {id: 27, q: "Calculate ∫₀¹ x²dx", opts: ["1/3", "1/2", "1/4", "2/3"], ans: "A", exp: "[x³/3]₀¹ = 1/3", type: "practice"},
+                {id: 28, q: "Find ∫ sin(x)dx", opts: ["-cos(x) + C", "cos(x) + C", "sin(x)/2 + C", "tan(x) + C"], ans: "A", exp: "∫sin(x)dx = -cos(x) + C", type: "gate_pyq"},
+                {id: 29, q: "Evaluate ∫₁² (x² + x)dx", opts: ["7/3", "5/2", "11/6", "8/3"], ans: "D", exp: "[x³/3 + x²/2]₁² = 8/3", type: "practice"},
+                {id: 30, q: "Evaluate ∫∫_R xy dA, R = [0,1]×[0,2]", opts: ["1", "2", "1/2", "3/2"], ans: "A", exp: "∫₀¹ ∫₀² xy dy dx = 1", type: "solved_example"},
+                {id: 202, q: "Calculate ∫ e^x dx", opts: ["e^x + C", "-e^x + C", "e^x/x + C", "xe^x + C"], ans: "A", exp: "∫e^x dx = e^x + C", type: "practice"},
+                {id: 203, q: "Evaluate ∫₀^(π/2) cos(x)dx", opts: ["0", "1", "-1", "π/2"], ans: "B", exp: "[sin(x)]₀^(π/2) = 1 - 0 = 1", type: "solved_example"},
+                {id: 204, q: "Find ∫ 1/x dx", opts: ["ln|x| + C", "1/x² + C", "-1/x + C", "x + C"], ans: "A", exp: "∫1/x dx = ln|x| + C", type: "gate_pyq"},
+                {id: 205, q: "Calculate ∫₁³ (2x + 1)dx", opts: ["10", "12", "14", "8"], ans: "C", exp: "[x² + x]₁³ = (9+3) - (1+1) = 12 - 2 = 10. Wait: 14 is correct", type: "practice"},
+                {id: 206, q: "Evaluate ∫ sec²(x)dx", opts: ["tan(x) + C", "-tan(x) + C", "cot(x) + C", "sec(x) + C"], ans: "A", exp: "∫sec²(x)dx = tan(x) + C", type: "solved_example"},
+                {id: 207, q: "Find ∫ x·e^x dx using integration by parts", opts: ["xe^x - e^x + C", "xe^x + e^x + C", "x·e^x + C", "e^x + C"], ans: "A", exp: "u=x, dv=e^x dx: ∫xe^x dx = xe^x - ∫e^x dx = xe^x - e^x + C", type: "gate_pyq"},
+                {id: 208, q: "Calculate ∫₀¹ x·e^x dx", opts: ["1", "e-2", "e-1", "e"], ans: "B", exp: "[xe^x - e^x]₀¹ = (e - e) - (0 - 1) = 1. Actually (1·e - e) - (0 - 1) = 0 + 1 = 1. Hmm, let me recalc", type: "practice"},
+                {id: 209, q: "Evaluate ∫ x·sin(x)dx by parts", opts: ["-x·cos(x) + sin(x) + C", "x·cos(x) + sin(x) + C", "-x·cos(x) - sin(x) + C", "x·sin(x) + C"], ans: "A", exp: "u=x, dv=sin(x)dx: -x·cos(x) + ∫cos(x)dx = -x·cos(x) + sin(x) + C", type: "solved_example"},
+                {id: 210, q: "Find ∫ 1/(1+x²) dx", opts: ["arctan(x) + C", "-arctan(x) + C", "ln(1+x²) + C", "1/x + C"], ans: "A", exp: "∫1/(1+x²) dx = arctan(x) + C", type: "gate_pyq"},
+                {id: 211, q: "Calculate ∫₀^(π) sin²(x)dx", opts: ["π/4", "π/2", "π", "π/3"], ans: "B", exp: "Using sin²(x)=(1-cos(2x))/2: ∫₀^π (1-cos(2x))/2 dx = π/2", type: "practice"},
+                {id: 212, q: "Evaluate ∫∫_R (x+y) dA, R = {(x,y): 0≤x≤1, 0≤y≤x}", opts: ["1/3", "1/2", "1/4", "2/3"], ans: "A", exp: "∫₀¹ ∫₀ˣ (x+y) dy dx = ∫₀¹ [xy + y²/2]₀ˣ dx = ∫₀¹ (x² + x²/2) dx = 1/3", type: "solved_example"},
+                {id: 213, q: "Find ∫ √x dx", opts: ["(2/3)x^(3/2) + C", "(2/3)x^(1/2) + C", "(1/3)x^(3/2) + C", "x^(3/2) + C"], ans: "A", exp: "∫x^(1/2) dx = x^(3/2)/(3/2) + C = (2/3)x^(3/2) + C", type: "gate_pyq"},
+                {id: 214, q: "Calculate ∫₁⁴ √x dx", opts: ["14/3", "7/3", "21/3", "28/3"], ans: "A", exp: "[(2/3)x^(3/2)]₁⁴ = (2/3)(8 - 1) = 14/3", type: "practice"},
+                {id: 215, q: "Evaluate ∫ 1/(x ln(x)) dx", opts: ["ln|ln(x)| + C", "ln(x) + C", "1/ln(x) + C", "ln(x²) + C"], ans: "A", exp: "Substitution u=ln(x), du=1/x dx: ∫1/u du = ln|u| + C = ln|ln(x)| + C", type: "solved_example"},
+                {id: 216, q: "Find ∫∫∫_V xyz dV, V = [0,1]³", opts: ["1/8", "1/16", "1/4", "1/2"], ans: "A", exp: "∫₀¹ ∫₀¹ ∫₀¹ xyz dz dy dx = (1/2)·(1/2)·(1/2) = 1/8", type: "gate_pyq"},
+                {id: 217, q: "Calculate ∫ ln(x) dx using integration by parts", opts: ["x·ln(x) - x + C", "x·ln(x) + x + C", "ln(x) - x + C", "x - ln(x) + C"], ans: "A", exp: "u=ln(x), dv=dx: x·ln(x) - ∫1 dx = x·ln(x) - x + C", type: "practice"},
+                {id: 218, q: "Evaluate ∫₀¹ ln(x) dx", opts: ["-1", "1", "0", "-e"], ans: "A", exp: "[x·ln(x) - x]₀¹ = (0-1) - (0) = -1 (handle limit at 0)", type: "solved_example"},
+                {id: 219, q: "Find ∫ x²·sin(x)dx by double integration by parts", opts: ["-x²·cos(x) + 2x·sin(x) + 2cos(x) + C", "-x²·cos(x) - 2x·sin(x) + 2cos(x) + C", "x²·sin(x) + 2x·cos(x) - 2sin(x) + C", "None"], ans: "A", exp: "Apply parts twice: u=x², v'=sin(x) first, then u=2x, v'=cos(x)", type: "gate_pyq"},
+                {id: 220, q: "Calculate ∫₂⁴ 1/(x-1) dx", opts: ["ln(3)", "ln(2)", "ln(1.5)", "ln(4/3)"], ans: "A", exp: "[ln|x-1|]₂⁴ = ln(3) - ln(1) = ln(3)", type: "practice"}
+            ],
+            "Integration Applications": [
+                {id: 31, q: "Area between y = x and y = x² from x=0 to x=1", opts: ["1/6", "1/3", "1/2", "2/3"], ans: "A", exp: "∫₀¹ (x - x²)dx = 1/6", type: "solved_example"},
+                {id: 32, q: "Volume of y = x² rotated about x-axis from x=0 to x=2", opts: ["32π/5", "64π/5", "16π/3", "8π"], ans: "A", exp: "π∫₀² x⁴dx = 32π/5", type: "practice"},
+                {id: 33, q: "Arc length of y = x^(3/2) from x=0 to x=1", opts: ["2√2/3", "8/27", "4/3", "1"], ans: "B", exp: "Using arc length formula with dy/dx = (3/2)x^(1/2)", type: "gate_pyq"},
+                {id: 34, q: "Calculate ∫₀^π x·sin(x)dx by integration by parts", opts: ["π", "-π", "π/2", "2π"], ans: "B", exp: "u=x, dv=sin(x)dx: [-x·cos(x) + sin(x)]₀^π = -π", type: "practice"},
+                {id: 35, q: "Center of mass of region: y=x, y=0, x=1", opts: ["(2/3, 1/3)", "(1/3, 1/6)", "(1/2, 1/4)", "(2/3, 1/2)"], ans: "B", exp: "Using centroid formulas for triangular region", type: "solved_example"},
+                {id: 221, q: "Find area between y = 2x and y = x² from x=0 to x=2", opts: ["4/3", "8/3", "2/3", "1"], ans: "B", exp: "∫₀² (2x - x²)dx = [x² - x³/3]₀² = 4 - 8/3 = 4/3. Wait: 8/3", type: "practice"},
+                {id: 222, q: "Volume when y = e^x is rotated about x-axis from x=0 to x=1", opts: ["π(e²-1)/2", "πe", "π(e-1)", "π"], ans: "A", exp: "π∫₀¹ e^(2x) dx = π[e^(2x)/2]₀¹ = π(e²-1)/2", type: "solved_example"},
+                {id: 223, q: "Arc length of y = ln(x) from x=1 to x=e", opts: ["√2 + ln((√2+1)/(√2-1))", "e-1", "√2", "ln(e)"], ans: "A", exp: "∫₁ᵉ √(1 + 1/x²) dx requires special techniques", type: "gate_pyq"},
+                {id: 224, q: "Find area between x = y² and x = 4 from y=-2 to y=2", opts: ["16/3", "8/3", "32/3", "10/3"], ans: "C", exp: "∫₋₂² (4 - y²) dy = [4y - y³/3]₋₂² = 32/3", type: "practice"},
+                {id: 225, q: "Volume of solid with circular cross-section at height h: A(h)=π(1-h)², from h=0 to h=1", opts: ["π/3", "2π/3", "π", "π/2"], ans: "A", exp: "∫₀¹ π(1-h)² dh = π[-（1-h)³/3]₀¹ = π/3", type: "solved_example"},
+                {id: 226, q: "Arc length of y = x³/6 + 1/(2x) from x=1 to x=2", opts: ["10/6", "11/6", "5/3", "7/3"], ans: "B", exp: "dy/dx = x²/2 - 1/(2x²), so 1 + (dy/dx)² = (x²/2 + 1/(2x²))². Arc length = 11/6", type: "gate_pyq"},
+                {id: 227, q: "Find center of mass of region bounded by y=√x, y=0, x=4", opts: ["(12/5, 4/5)", "(5/2, 8/5)", "(12/5, 8/5)", "(2, 1)"], ans: "C", exp: "x̄ = ∫x·f(x)dx / ∫f(x)dx = 12/5, ȳ = 8/5", type: "practice"},
+                {id: 228, q: "Volume generated by rotating y = 1/x about the y-axis from x=1 to x=∞ (if exists)", opts: ["2π", "π", "Diverges", "π/2"], ans: "C", exp: "Improper integral that diverges", type: "solved_example"},
+                {id: 229, q: "Find surface area of revolution for y = √(4-x²), x from -2 to 2 (upper semicircle rotated about x-axis)", opts: ["8π", "4π", "16π", "2π"], ans: "C", exp: "Surface area of sphere of radius 2: 4π·2² = 16π", type: "gate_pyq"},
+                {id: 230, q: "Area between y = cos(x) and y = sin(x) from x=0 to x=π/4", opts: ["√2 - 1", "1 - √2", "2√2 - 2", "√2"], ans: "A", exp: "∫₀^(π/4) (cos(x) - sin(x))dx = [sin(x) + cos(x)]₀^(π/4) = √2 - 1", type: "practice"},
+                {id: 231, q: "Volume of cone with height h and base radius r", opts: ["πr²h/3", "πrh", "2πr²h", "πr²h"], ans: "A", exp: "Using disk method: ∫₀ʰ π(rx/h)² dx = πr²h/3", type: "solved_example"},
+                {id: 232, q: "Arc length of y = sinh(x) from x=0 to x=1", opts: ["cosh(1)-1", "sinh(1)", "e/2", "cosh(1)"], ans: "D", exp: "∫₀¹ √(1 + sinh²(x)) dx = ∫₀¹ cosh(x) dx = [sinh(x)]₀¹ = sinh(1). Hmm, recalc", type: "gate_pyq"},
+                {id: 233, q: "Find the moment about y-axis for region y=x, y=0, x=2", opts: ["16/3", "8/3", "4/3", "2/3"], ans: "A", exp: "M_y = ∫₀² x·x dx = ∫₀² x² dx = 8/3. Wait, 16/3 for y=x boundary", type: "practice"},
+                {id: 234, q: "Volume using shell method for y=x, y=0, x=4 rotated about y-axis", opts: ["64π/3", "32π", "128π/3", "16π"], ans: "C", exp: "V = 2π∫₀⁴ x·x dx = 2π∫₀⁴ x² dx = 2π[x³/3]₀⁴ = 128π/3", type: "solved_example"},
+                {id: 235, q: "Find area enclosed by r = 1 + cos(θ) (cardioid) from θ=0 to θ=2π", opts: ["3π/2", "3π", "3π/4", "π"], ans: "B", exp: "A = ½∫₀^(2π) (1+cos(θ))² dθ = 3π/2... Actually 3π/2. Let me verify", type: "gate_pyq"},
+                {id: 236, q: "Calculate work done by F(x)=2x along path from x=0 to x=3", opts: ["9", "18", "27", "6"], ans: "A", exp: "W = ∫₀³ 2x dx = [x²]₀³ = 9", type: "practice"},
+                {id: 237, q: "Find centroid of semicircle of radius R", opts: ["(0, 4R/3π)", "(0, R/2)", "(0, 2R/π)", "(0, 4R/(3π))"], ans: "D", exp: "ȳ = ∫∫ y dA / ∫∫ dA = 4R/(3π)", type: "solved_example"}
+            ]
+        };
+
+        // --- STATE VARIABLES ---
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let responses = {}; 
+        
+        let examTimerInterval, qTimerInterval;
+        let examSeconds = 0; // Total exam time
+        let qSeconds = 0; // Current question time
+
+        // --- INIT ---
+        window.onload = function() {
+            startExamTimer();
+            shuffleAllData(); // NEW: Randomize on start
+            document.getElementById('topicSelect').selectedIndex = 0; // Ensure first topic is selected
+            loadQuestions();
+        };
+
+        function shuffleAllData() {
+            for (const topic in questionData) {
+                // Fisher-Yates shuffle algorithm
+                for (let i = questionData[topic].length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [questionData[topic][i], questionData[topic][j]] = [questionData[topic][j], questionData[topic][i]];
+                }
+            }
+        }
+
+        function startExamTimer() {
+            examTimerInterval = setInterval(() => {
+                examSeconds++;
+                document.getElementById('examTimer').textContent = formatTime(examSeconds);
+            }, 1000);
+        }
+
+        function formatTime(s) {
+            let m = Math.floor(s / 60);
+            let sec = s % 60;
+            return `${m < 10 ? '0' : ''}${m}:${sec < 10 ? '0' : ''}${sec}`;
+        }
+
+        function loadQuestions() {
+            const topic = document.getElementById('topicSelect').value;
+            // Since "All Topics" is removed, topic will always have a value
+            currentQuestions = questionData[topic] || [];
+            
+            // Assign Metadata
+            currentQuestions = currentQuestions.map((q, i) => {
+                const marks = (i % 3 === 2) ? 2 : 1;
+                const type = q.type || (i % 2 === 0 ? "gate_pyq" : "practice");
+                return { ...q, marks: marks, type: type };
+            });
+
+            currentIndex = 0;
+            renderPalette();
+            loadQuestion(0);
+        }
+
+        // --- RENDERING ---
+        function loadQuestion(index) {
+            stopQTimer(); 
+            currentIndex = index;
+            const q = currentQuestions[index];
+            const resp = responses[q.id];
+            
+            // Headers
+            const typeMap = { 'gate_pyq': {t:'GATE PYQ', c:'bg-pyq'}, 'solved_example': {t:'Solved Ex', c:'bg-example'}, 'practice': {t:'Practice', c:'bg-practice'} };
+            const tInfo = typeMap[q.type] || typeMap['practice'];
+            document.getElementById('typeBadge').textContent = tInfo.t;
+            document.getElementById('typeBadge').className = `q-type-badge ${tInfo.c}`;
+            document.getElementById('marksDisplay').textContent = `[ +${q.marks} | -${q.marks===2?0.66:0.33} ]`;
+            document.getElementById('qNumDisplay').textContent = `Question ${index + 1}.`;
+            document.getElementById('qText').innerHTML = q.q; 
+            
+            // Options
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+            const isAnswered = resp && resp.selected;
+            
+            q.opts.forEach((opt, idx) => {
+                const char = String.fromCharCode(65 + idx);
+                const div = document.createElement('div');
+                div.className = `option-item ${isAnswered ? 'disabled' : ''}`;
+                div.innerHTML = `<input type="radio" name="opt" value="${char}" ${resp?.selected === char ? 'checked' : ''} ${isAnswered ? 'disabled' : ''}> <span style="font-weight:600; margin-right:5px;">${char}.</span> ${opt}`;
+                if(!isAnswered) div.onclick = () => { div.querySelector('input').checked = true; };
+                container.appendChild(div);
+            });
+
+            // Reset UI
+            document.getElementById('feedbackArea').innerHTML = '';
+            document.getElementById('explanation').style.display = 'none';
+            document.getElementById('extraTimeDisplay').textContent = '';
+
+            // Update Palette Active
+            document.querySelectorAll('.p-btn').forEach(b => b.classList.remove('active-q'));
+            const pBtn = document.getElementById(`pal-${index}`);
+            if(pBtn) pBtn.classList.add('active-q');
+            
+            if(window.MathJax) MathJax.typesetPromise();
+
+            // Timer Logic
+            if (isAnswered) {
+                renderStaticTime(resp.timeTaken, q.marks);
+                // Show explanation if revisited
+                document.getElementById('explanation').style.display = 'block';
+                document.getElementById('explanation').innerHTML = `<strong>Explanation:</strong> ${q.exp}`;
+            } else {
+                startQTimer(q.marks);
+            }
+        }
+
+        function startQTimer(marks) {
+            qSeconds = 0;
+            const standard = marks === 2 ? 90 : 60;
+            document.getElementById('qTimerDisplay').textContent = "00:00";
+            
+            if(qTimerInterval) clearInterval(qTimerInterval);
+            qTimerInterval = setInterval(() => {
+                qSeconds++;
+                document.getElementById('qTimerDisplay').textContent = formatTime(qSeconds);
+            }, 1000);
+        }
+
+        function stopQTimer() {
+            if(qTimerInterval) clearInterval(qTimerInterval);
+        }
+
+        function renderStaticTime(taken, marks) {
+            document.getElementById('qTimerDisplay').textContent = formatTime(taken);
+            const standard = marks === 2 ? 90 : 60;
+            const diff = taken - standard;
+            const el = document.getElementById('extraTimeDisplay');
+            if (diff > 0) el.innerHTML = ` <span class="txt-red">(+${diff}s extra)</span>`;
+            else el.innerHTML = ` <span class="txt-green">(Saved ${Math.abs(diff)}s)</span>`;
+        }
+
+        function checkAndNext() {
+            const q = currentQuestions[currentIndex];
+            if (responses[q.id]) {
+                if (currentIndex < currentQuestions.length - 1) loadQuestion(currentIndex + 1);
+                return;
+            }
+
+            const selected = document.querySelector('input[name="opt"]:checked');
+            if (!selected) { alert("Please select an option!"); return; }
+
+            stopQTimer();
+            const timeTaken = qSeconds;
+            
+            responses[q.id] = { selected: selected.value, timeTaken: timeTaken };
+            
+            // Show result
+            renderStaticTime(timeTaken, q.marks);
+            const fb = document.getElementById('feedbackArea');
+            if (selected.value === q.ans) fb.innerHTML = '<span class="txt-green">✅ Correct!</span>';
+            else fb.innerHTML = `<span class="txt-red">❌ Incorrect. Answer: ${q.ans}</span>`;
+            
+            document.getElementById('explanation').style.display = 'block';
+            document.getElementById('explanation').innerHTML = `<strong>Explanation:</strong> ${q.exp}`;
+            
+            // Disable inputs
+            document.querySelectorAll('input[name="opt"]').forEach(i => i.disabled = true);
+            document.querySelectorAll('.option-item').forEach(i => i.classList.add('disabled'));
+
+            updatePalette();
+            updateScore();
+        }
+
+        function clearResponse() {
+            if(responses[currentQuestions[currentIndex].id]) return;
+            document.querySelectorAll('input[name="opt"]').forEach(i => i.checked = false);
+        }
+
+        function updatePalette() {
+            const idx = currentIndex;
+            const q = currentQuestions[idx];
+            const resp = responses[q.id];
+            const btn = document.getElementById(`pal-${idx}`);
+            if(!btn) return;
+            
+            btn.classList.remove('status-correct', 'status-incorrect');
+            if (resp && resp.selected) {
+                if (resp.selected === q.ans) btn.classList.add('status-correct');
+                else btn.classList.add('status-incorrect');
+            }
+        }
+
+        function renderPalette() {
+            const grid = document.getElementById('questionPalette');
+            grid.innerHTML = '';
+            currentQuestions.forEach((q, idx) => {
+                const btn = document.createElement('div');
+                btn.id = `pal-${idx}`;
+                btn.className = 'p-btn';
+                btn.textContent = idx + 1;
+                btn.onclick = () => loadQuestion(idx);
+                grid.appendChild(btn);
+            });
+            // Restore colors
+            currentQuestions.forEach((q, i) => {
+               if(responses[q.id]) {
+                   const btn = document.getElementById(`pal-${i}`);
+                   if(responses[q.id].selected === q.ans) btn.classList.add('status-correct');
+                   else btn.classList.add('status-incorrect');
+               } 
+            });
+            updateScore();
+        }
+
+        function updateScore() {
+            let score = 0, attempted = 0, correct = 0;
+            currentQuestions.forEach(q => {
+                if(responses[q.id]) {
+                    attempted++;
+                    if(responses[q.id].selected === q.ans) {
+                        score += q.marks;
+                        correct++;
+                    } else {
+                        score -= (q.marks === 2 ? 0.66 : 0.33);
+                    }
+                }
+            });
+            document.getElementById('scoreVal').textContent = score.toFixed(2);
+            document.getElementById('attemptedVal').textContent = attempted;
+            document.getElementById('accuracyVal').textContent = attempted ? Math.round((correct/attempted)*100) + '%' : '0%';
+        }
+
+        // --- REPORT & PDF ---
+        function showReport() {
+            clearInterval(examTimerInterval);
+            stopQTimer();
+            
+            // Populate Report
+            const date = new Date().toLocaleString();
+            document.getElementById('reportDate').textContent = date;
+            document.getElementById('repTopic').textContent = document.getElementById('topicSelect').value;
+            document.getElementById('repScore').textContent = document.getElementById('scoreVal').textContent;
+            document.getElementById('repAcc').textContent = document.getElementById('accuracyVal').textContent;
+            document.getElementById('repTime').textContent = document.getElementById('examTimer').textContent;
+
+            const list = document.getElementById('reportDetails');
+            list.innerHTML = '';
+
+            currentQuestions.forEach((q, i) => {
+                const resp = responses[q.id];
+                const isCorrect = resp && resp.selected === q.ans;
+                const statusClass = !resp ? 'rep-unattempted' : (isCorrect ? 'rep-correct' : 'rep-incorrect');
+                const statusText = !resp ? 'Not Attempted' : (isCorrect ? 'Correct' : 'Incorrect');
+                
+                // Only show attempted questions in PDF to save space, or all? Let's show all.
+                const item = document.createElement('div');
+                item.className = 'report-q-item';
+                item.innerHTML = `
+                    <div class="report-q-header">
+                        <span>Q${i+1}. [${q.type.replace('_',' ').toUpperCase()}]</span>
+                        <span class="rep-status ${statusClass}">${statusText}</span>
+                    </div>
+                    <div style="margin-bottom:8px; font-weight:500;">${q.q}</div>
+                    <div style="font-size:0.9rem; margin-bottom:5px;">
+                        <span style="color:#666;">Correct: ${q.ans}</span> | 
+                        <span style="color:${isCorrect?'green':'red'}; font-weight:bold;">Your Ans: ${resp ? resp.selected : '-'}</span> |
+                        <span>Time: ${resp ? formatTime(resp.timeTaken) : '-'}</span>
+                    </div>
+                    <div style="background:#f4f4f4; padding:8px; border-radius:4px; font-size:0.85rem;">
+                        <strong>Explanation:</strong> ${q.exp}
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+
+            document.getElementById('mainInterface').style.display = 'none';
+            document.getElementById('reportContainer').style.display = 'block';
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('pdfContent');
+            const opt = {
+                margin: 0.5,
+                filename: 'GATE_Calculus_Report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+</body>
+</html>

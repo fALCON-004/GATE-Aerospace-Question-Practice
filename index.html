@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GATE Aerospace Index</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2d3e50;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+        }
+
+        /* Subject Card Style */
+        .subject-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 25px;
+            overflow: hidden;
+            border-left: 5px solid #3A8BDC; /* Accent color */
+        }
+
+        .subject-header {
+            background-color: #f8f9fa;
+            color: #2d3e50;
+            padding: 15px 20px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .topic-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .topic-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s;
+        }
+
+        .topic-item:last-child {
+            border-bottom: none;
+        }
+
+        .topic-item:hover {
+            background-color: #f0f7ff;
+        }
+
+        .topic-name {
+            font-size: 1.05rem;
+            color: #444;
+            font-weight: 500;
+        }
+
+        /* Link Button Style */
+        .open-btn {
+            text-decoration: none;
+            background-color: #3A8BDC;
+            color: white;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            transition: background 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .open-btn:hover {
+            background-color: #2c6ea4;
+        }
+        
+        /* Disabled Button Style */
+        .disabled-btn {
+            background-color: #e0e0e0;
+            color: #888;
+            cursor: default;
+            box-shadow: none;
+        }
+        .disabled-btn:hover {
+            background-color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>GATE 2025 Aerospace Engineering</h1>
+        <div class="subtitle">Study Material & Mock Tests Index</div>
+
+        <div class="subject-card">
+            <div class="subject-header">Engineering Mathematics</div>
+            <ul class="topic-list">
+                <li class="topic-item">
+                    <span class="topic-name">Differentiation and Integration</span>
+                    <a href="Differentiation and Integration.html" class="open-btn" target="_blank">Start Test →</a>
+                </li>
+                <li class="topic-item">
+                    <span class="topic-name">Linear Algebra</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="subject-card" style="border-left-color: #e74c3c;">
+            <div class="subject-header">Aerodynamics</div>
+            <ul class="topic-list">
+                <li class="topic-item">
+                    <span class="topic-name">Fluid Dynamics & Basics</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+                <li class="topic-item">
+                    <span class="topic-name">Airfoil & Wing Theory</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+                <li class="topic-item">
+                    <span class="topic-name">Compressible Flow (Gas Dynamics)</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="subject-card" style="border-left-color: #2ecc71;">
+            <div class="subject-header">Flight Mechanics</div>
+            <ul class="topic-list">
+                <li class="topic-item">
+                    <span class="topic-name">Performance (Climb, Cruise, Descent)</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+                <li class="topic-item">
+                    <span class="topic-name">Stability & Control</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="subject-card" style="border-left-color: #f39c12;">
+            <div class="subject-header">Propulsion</div>
+            <ul class="topic-list">
+                <li class="topic-item">
+                    <span class="topic-name">Jet Propulsion (Cycles, Components)</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+                <li class="topic-item">
+                    <span class="topic-name">Rocket Propulsion</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="subject-card" style="border-left-color: #9b59b6;">
+            <div class="subject-header">Structures</div>
+            <ul class="topic-list">
+                <li class="topic-item">
+                    <span class="topic-name">Stress & Strain (Strength of Materials)</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+                <li class="topic-item">
+                    <span class="topic-name">Structural Dynamics</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+                <li class="topic-item">
+                    <span class="topic-name">Thin Walled Columns & Failure Theories</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="subject-card" style="border-left-color: #34495e;">
+            <div class="subject-header">Space Dynamics</div>
+            <ul class="topic-list">
+                <li class="topic-item">
+                    <span class="topic-name">Orbit Mechanics</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+            </ul>
+        </div>
+
+        <div class="subject-card" style="border-left-color: #607d8b;">
+            <div class="subject-header">General Aptitude</div>
+            <ul class="topic-list">
+                <li class="topic-item">
+                    <span class="topic-name">Numerical Ability</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+                <li class="topic-item">
+                    <span class="topic-name">Verbal Ability</span>
+                    <button class="open-btn disabled-btn">(Coming Soon)</button>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+</body>
+</html>
