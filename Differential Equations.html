@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GATE 2025 Differential Equations</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <style>
+        :root {
+            --gate-header: #2d3e50;
+            --gate-blue: #3A8BDC;
+            --calc-header: #3b5998;
+            --status-correct: #28a745;
+            --status-incorrect: #dc3545;
+            --badge-pyq: #6f42c1;
+            --badge-practice: #17a2b8;
+            --badge-example: #28a745;
+            --bg-light: #f4f6f9;
+        }
+
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; background-color: var(--bg-light); overflow: hidden; }
+
+        /* HEADER */
+        header {
+            background-color: var(--gate-header);
+            color: white;
+            padding: 0 1.5rem;
+            height: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            z-index: 100;
+        }
+        .header-title { font-size: 1.2rem; font-weight: 600; }
+        .header-info { display: flex; gap: 15px; align-items: center; }
+        .exam-timer-box { 
+            background: #222; color: #00ff00; padding: 5px 12px; 
+            font-family: 'Consolas', monospace; font-size: 1.2rem; 
+            border-radius: 4px; border: 1px solid #444; min-width: 80px; text-align: center;
+        }
+        .action-btn { 
+            border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; 
+            font-weight: bold; color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.2); 
+        }
+        .btn-calc { background: #f0ad4e; }
+        .btn-finish { background: #dc3545; }
+
+        /* MAIN LAYOUT */
+        .main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+        /* QUESTION AREA */
+        .question-area {
+            flex: 3; display: flex; flex-direction: column;
+            background: white; border-right: 1px solid #e0e0e0;
+            overflow-y: hidden;
+        }
+
+        .question-header-bar {
+            background: #f8f9fa; padding: 10px 25px; border-bottom: 1px solid #e0e0e0;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .q-type-badge {
+            padding: 4px 10px; border-radius: 12px; color: white;
+            font-size: 0.75rem; font-weight: bold; text-transform: uppercase;
+            margin-right: 10px;
+        }
+        .bg-pyq { background-color: var(--badge-pyq); }
+        .bg-practice { background-color: var(--badge-practice); }
+        .bg-example { background-color: var(--badge-example); }
+
+        .q-timer-container {
+            display: flex; align-items: center; gap: 8px;
+            background: white; padding: 5px 12px; border-radius: 6px;
+            border: 1px solid #ccc; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .timer-val { font-family: 'Consolas', monospace; font-size: 1.1rem; font-weight: bold; }
+        .txt-red { color: #dc3545; }
+        .txt-green { color: #28a745; }
+
+        .question-scroll { padding: 30px; flex: 1; overflow-y: auto; font-size: 1.1rem; line-height: 1.6; color: #333; }
+        .question-text { margin-bottom: 25px; font-weight: 500; }
+
+        .option-item {
+            display: flex; align-items: center; padding: 12px 15px; margin-bottom: 12px;
+            border: 2px solid #e9ecef; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+        }
+        .option-item:hover { border-color: var(--gate-blue); background: #f0f7ff; }
+        .option-item.disabled { cursor: default; opacity: 0.8; }
+        .option-item input { margin-right: 15px; transform: scale(1.2); }
+
+        .control-footer {
+            padding: 15px 25px; background: #fff; border-top: 1px solid #e0e0e0;
+            display: flex; justify-content: space-between;
+        }
+        .btn-check { background: var(--gate-blue); color: white; padding: 10px 25px; font-size: 1rem; border: none; border-radius: 4px; cursor: pointer;}
+
+        /* SIDEBAR */
+        .sidebar {
+            flex: 1; min-width: 300px; max-width: 340px; background: #fff;
+            display: flex; flex-direction: column; border-left: 1px solid #e0e0e0;
+        }
+        .candidate-profile { padding: 15px; background: #f8f9fa; border-bottom: 1px solid #e0e0e0; display: flex; align-items: center; gap: 12px; }
+        .profile-img { width: 45px; height: 45px; background: #e0e0e0; border-radius: 50%; }
+        
+        .score-panel {
+            padding: 15px; background: #2d3e50; color: white; font-size: 0.85rem;
+            display: flex; justify-content: space-around;
+        }
+        .score-item span { display: block; font-size: 1.4rem; font-weight: bold; color: #f0ad4e; }
+
+        .palette-grid {
+            padding: 15px; display: grid; grid-template-columns: repeat(5, 1fr);
+            gap: 8px; overflow-y: auto; align-content: start; flex: 1;
+        }
+        .p-btn {
+            height: 35px; border: 1px solid #e0e0e0; background: #fff;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 0.9rem; border-radius: 4px; font-weight: 600; color: #555;
+        }
+        .p-btn.active-q { border: 2px solid var(--gate-blue); color: var(--gate-blue); }
+        .status-correct { background-color: var(--status-correct); color: white; border: none; }
+        .status-incorrect { background-color: var(--status-incorrect); color: white; border: none; }
+
+        .filter-section { padding: 15px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+        select { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        
+        .explanation-box {
+            margin-top: 20px; padding: 15px; background: #eef6fc;
+            border-left: 4px solid var(--gate-blue); display: none; font-size: 0.95rem;
+        }
+
+        /* VIRTUAL CALCULATOR STYLES */
+        #virtualCalc {
+            position: absolute; top: 80px; left: 50px; width: 400px;
+            background: #e0e0e0; border: 1px solid #999;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 1000;
+            display: none; font-family: Arial, sans-serif;
+            border-radius: 4px;
+        }
+        .calc-header {
+            background: var(--calc-header); color: white; padding: 8px;
+            cursor: move; display: flex; justify-content: space-between;
+            font-size: 0.9rem; font-weight: bold;
+        }
+        .calc-close { cursor: pointer; color: #fff; font-weight: bold; }
+        
+        .calc-display {
+            background: white; margin: 10px; padding: 5px;
+            border: 1px solid #bbb; text-align: right;
+        }
+        #calcInput { 
+            width: 100%; border: none; font-size: 1.5rem; text-align: right; outline: none; margin-bottom: 5px;
+        }
+        #calcPreview {
+            display: block; font-size: 0.8rem; color: #666; height: 15px;
+        }
+
+        .calc-body { padding: 0 10px 10px 10px; }
+        .calc-grid { display: grid; grid-template-columns: 2fr 3fr; gap: 5px; }
+        .calc-left { display: grid; gap: 4px; grid-template-columns: repeat(3, 1fr); }
+        .calc-right { display: grid; gap: 4px; grid-template-columns: repeat(4, 1fr); }
+
+        .c-btn {
+            padding: 8px 0; border: 1px solid #aaa; background: #f0f0f0;
+            font-size: 0.85rem; cursor: pointer; border-radius: 2px;
+            transition: background 0.1s; font-weight: 500;
+        }
+        .c-btn:active { background: #ccc; }
+        .c-btn.num { background: #fff; font-weight: bold; font-size: 1rem; }
+        .c-btn.op { background: #dcdcdc; }
+        .c-btn.eq { background: var(--calc-header); color: white; border-color: #2a4073; }
+        .c-btn.mem { background: #e8e8e8; color: #a00; }
+        
+        .radio-group { font-size: 0.8rem; margin-bottom: 5px; display: flex; gap: 10px; background: #ddd; padding: 4px; border-radius: 2px;}
+
+        /* REPORT styles */
+        #reportContainer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 200; overflow-y: auto; padding: 40px; display: none;
+        }
+        .report-header { text-align: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 30px; }
+        .report-stats { display: flex; justify-content: center; gap: 40px; margin-bottom: 30px; }
+        .stat-box { text-align: center; padding: 15px; background: #f8f9fa; border-radius: 8px; min-width: 150px; }
+        .stat-val { display: block; font-size: 1.5rem; font-weight: bold; color: var(--gate-blue); }
+        .report-q-item { border: 1px solid #eee; padding: 15px; margin-bottom: 15px; border-radius: 6px; page-break-inside: avoid; }
+        .report-q-header { display: flex; justify-content: space-between; margin-bottom: 10px; font-weight: bold; color: #555; }
+        .rep-status { padding: 2px 8px; border-radius: 4px; color: white; font-size: 0.8rem; }
+        .rep-correct { background: var(--status-correct); }
+        .rep-incorrect { background: var(--status-incorrect); }
+        .rep-unattempted { background: #999; }
+        .btn-download {
+            position: fixed; bottom: 30px; right: 30px;
+            background: var(--gate-blue); color: white; padding: 15px 30px;
+            border: none; border-radius: 30px; font-size: 1.1rem; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 300;
+        }
+
+        @media (max-width: 768px) {
+            .main-container { flex-direction: column; }
+            .sidebar { display: none; }
+            #virtualCalc { width: 90%; left: 5%; top: 10%; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title">Differential Equations</div>
+        <div class="header-info">
+            <button class="action-btn btn-calc" onclick="toggleCalc()">🖩 Virtual Calculator</button>
+            <span>Total:</span>
+            <div class="exam-timer-box" id="examTimer">00:00</div>
+            <button class="action-btn btn-finish" onclick="showReport()">Finish Session</button>
+        </div>
+    </header>
+
+    <div class="main-container" id="mainInterface">
+        <div class="question-area">
+            <div class="question-header-bar">
+                <div style="display: flex; align-items: center;">
+                    <span id="typeBadge" class="q-type-badge bg-practice">Practice</span>
+                    <span id="marksDisplay" style="color: #666; font-size: 0.9rem; font-weight: 600;"></span>
+                </div>
+                
+                <div class="q-timer-container">
+                    <span style="font-size: 0.9rem; color: #666;">⏱️ Time:</span>
+                    <span id="qTimerDisplay" class="timer-val">00:00</span>
+                    <span id="extraTimeDisplay" style="font-size: 0.8rem; font-weight:bold;"></span>
+                </div>
+            </div>
+
+            <div class="question-scroll">
+                <div class="filter-section">
+                    <select id="topicSelect" onchange="loadQuestions()">
+                        <option value="First Order ODEs">First Order ODEs</option>
+                        <option value="Higher Order Linear ODEs">Higher Order Linear ODEs</option>
+                        <option value="PDEs & Laplace Transforms">PDEs & Laplace Transforms</option>
+                    </select>
+                </div>
+                
+                <h3 id="qNumDisplay" style="color: var(--gate-blue); margin-top: 20px;">Question 1.</h3>
+                <div id="qText" class="question-text">Loading...</div>
+                
+                <div id="optionsContainer" class="options-container"></div>
+
+                <div id="feedbackArea" style="margin-top: 20px; font-weight: bold; min-height: 25px;"></div>
+                <div id="explanation" class="explanation-box"></div>
+            </div>
+
+            <div class="control-footer">
+                <button class="action-btn" style="background:#fff; color:#555; border:1px solid #ccc" onclick="clearResponse()">Clear</button>
+                <button class="btn-check" onclick="checkAndNext()">Check & Next →</button>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="candidate-profile">
+                <div class="profile-img"></div>
+                <div>
+                    <div style="font-weight: bold; color: #333;">Candidate</div>
+                    <div style="font-size: 0.8rem; color: #777;">GATE DE</div>
+                </div>
+            </div>
+
+            <div class="score-panel">
+                <div class="score-item"><span>+<span id="scoreVal">0</span></span>Score</div>
+                <div class="score-item"><span id="attemptedVal">0</span>Attmp</div>
+                <div class="score-item"><span id="accuracyVal">0%</span>Acc</div>
+            </div>
+
+            <div class="palette-grid" id="questionPalette"></div>
+        </div>
+    </div>
+
+    <div id="virtualCalc">
+        <div class="calc-header" id="calcHeader">
+            <span>GATE Scientific Calculator</span>
+            <span class="calc-close" onclick="toggleCalc()">X</span>
+        </div>
+        <div class="calc-display">
+            <span id="calcPreview"></span>
+            <input type="text" id="calcInput" value="0" readonly>
+        </div>
+        <div class="calc-body">
+            <div class="radio-group">
+                <label><input type="radio" name="angle" value="deg" checked onchange="setMode('deg')"> Deg</label>
+                <label><input type="radio" name="angle" value="rad" onchange="setMode('rad')"> Rad</label>
+            </div>
+            
+            <div class="calc-grid">
+                <div class="calc-left">
+                     <button class="c-btn mem" onclick="mem('MC')">MC</button>
+                    <button class="c-btn mem" onclick="mem('MR')">MR</button>
+                    <button class="c-btn mem" onclick="mem('MS')">MS</button>
+                    <button class="c-btn" onclick="scientific('sin')">sin</button>
+                    <button class="c-btn" onclick="scientific('cos')">cos</button>
+                    <button class="c-btn" onclick="scientific('tan')">tan</button>
+                    <button class="c-btn" onclick="scientific('ln')">ln</button>
+                    <button class="c-btn" onclick="scientific('log')">log</button>
+                    <button class="c-btn" onclick="scientific('fact')">n!</button>
+                    <button class="c-btn" onclick="scientific('pow2')">x²</button>
+                    <button class="c-btn" onclick="scientific('sqrt')">√</button>
+                    <button class="c-btn" onclick="scientific('inv')">1/x</button>
+                     <button class="c-btn" onclick="scientific('exp')">e</button>
+                     <button class="c-btn" onclick="scientific('pi')">π</button>
+                     <button class="c-btn" onclick="scientific('abs')">|x|</button>
+                </div>
+                
+                <div class="calc-right">
+                    <button class="c-btn" onclick="clearAll()">C</button>
+                    <button class="c-btn" onclick="backspace()">⌫</button>
+                    <button class="c-btn op" onclick="scientific('pow')">x^y</button>
+                    <button class="c-btn op" onclick="operator('/')">÷</button>
+                    <button class="c-btn num" onclick="num(7)">7</button>
+                    <button class="c-btn num" onclick="num(8)">8</button>
+                    <button class="c-btn num" onclick="num(9)">9</button>
+                    <button class="c-btn op" onclick="operator('*')">×</button>
+                    <button class="c-btn num" onclick="num(4)">4</button>
+                    <button class="c-btn num" onclick="num(5)">5</button>
+                    <button class="c-btn num" onclick="num(6)">6</button>
+                    <button class="c-btn op" onclick="operator('-')">-</button>
+                    <button class="c-btn num" onclick="num(1)">1</button>
+                    <button class="c-btn num" onclick="num(2)">2</button>
+                    <button class="c-btn num" onclick="num(3)">3</button>
+                    <button class="c-btn op" onclick="operator('+')">+</button>
+                    <button class="c-btn op" onclick="scientific('sign')">±</button>
+                    <button class="c-btn num" onclick="num(0)">0</button>
+                    <button class="c-btn num" onclick="num('.')">.</button>
+                    <button class="c-btn eq" onclick="calculate()">=</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="reportContainer">
+        <button class="btn-download" onclick="downloadPDF()">📥 Download PDF</button>
+        <div id="pdfContent">
+            <div class="report-header">
+                <h1>GATE 2025 DE Report</h1>
+                <p>Generated on: <span id="reportDate"></span> | Topic: <span id="repTopic"></span></p>
+            </div>
+            
+            <div class="report-stats">
+                <div class="stat-box"><span class="stat-val" id="repScore">0</span>Final Score</div>
+                <div class="stat-box"><span class="stat-val" id="repAcc">0%</span>Accuracy</div>
+                <div class="stat-box"><span class="stat-val" id="repTime">00:00</span>Total Time</div>
+            </div>
+
+            <h3 style="border-bottom: 2px solid #ddd; padding-bottom: 10px;">Detailed Analysis</h3>
+            <div id="reportDetails"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- CALCULATOR LOGIC ---
+        let calcInput = document.getElementById('calcInput');
+        let calcPreview = document.getElementById('calcPreview');
+        let currentVal = "0";
+        let pendingVal = null;
+        let pendingOp = null;
+        let isNewInput = true;
+        let isDeg = true;
+        let memory = 0;
+
+        function toggleCalc() {
+            const el = document.getElementById('virtualCalc');
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        }
+
+        const calcEl = document.getElementById("virtualCalc");
+        const headerEl = document.getElementById("calcHeader");
+        let isDragging = false, offsetX, offsetY;
+
+        headerEl.addEventListener("mousedown", (e) => {
+            isDragging = true;
+            offsetX = e.clientX - calcEl.offsetLeft;
+            offsetY = e.clientY - calcEl.offsetTop;
+        });
+        document.addEventListener("mousemove", (e) => {
+            if (isDragging) {
+                calcEl.style.left = (e.clientX - offsetX) + "px";
+                calcEl.style.top = (e.clientY - offsetY) + "px";
+            }
+        });
+        document.addEventListener("mouseup", () => isDragging = false);
+
+        function updateDisplay() { calcInput.value = currentVal; }
+        
+        function num(n) {
+            if (isNewInput) {
+                currentVal = n.toString();
+                isNewInput = false;
+            } else {
+                if (n === '.' && currentVal.includes('.')) return;
+                currentVal += n;
+            }
+            updateDisplay();
+        }
+
+        function clearAll() {
+            currentVal = "0"; pendingVal = null; pendingOp = null; isNewInput = true;
+            calcPreview.textContent = "";
+            updateDisplay();
+        }
+
+        function backspace() {
+            if (isNewInput) return;
+            currentVal = currentVal.slice(0, -1) || "0";
+            updateDisplay();
+        }
+
+        function operator(op) {
+            const val = parseFloat(currentVal);
+            if (pendingVal !== null && !isNewInput) {
+                calculate(true); 
+            }
+            pendingVal = parseFloat(currentVal);
+            pendingOp = op;
+            isNewInput = true;
+            calcPreview.textContent = `${pendingVal} ${op}`;
+        }
+
+        function calculate(isChained = false) {
+            if (pendingOp === null || pendingVal === null) return;
+            const current = parseFloat(currentVal);
+            let result = 0;
+            switch(pendingOp) {
+                case '+': result = pendingVal + current; break;
+                case '-': result = pendingVal - current; break;
+                case '*': result = pendingVal * current; break;
+                case '/': result = pendingVal / current; break;
+                case 'pow': result = Math.pow(pendingVal, current); break;
+            }
+            currentVal = result.toString();
+            updateDisplay();
+            if(!isChained) { calcPreview.textContent = ""; pendingVal = null; pendingOp = null; isNewInput = true; } 
+            else { pendingVal = result; }
+        }
+
+        function setMode(mode) { isDeg = (mode === 'deg'); }
+
+        function scientific(func) {
+            let val = parseFloat(currentVal);
+            let res = 0;
+            switch(func) {
+                case 'sin': res = isDeg ? Math.sin(val * Math.PI/180) : Math.sin(val); break;
+                case 'cos': res = isDeg ? Math.cos(val * Math.PI/180) : Math.cos(val); break;
+                case 'tan': res = isDeg ? Math.tan(val * Math.PI/180) : Math.tan(val); break;
+                case 'ln': res = Math.log(val); break;
+                case 'log': res = Math.log10(val); break;
+                case 'sqrt': res = Math.sqrt(val); break;
+                case 'pow2': res = Math.pow(val, 2); break;
+                case 'inv': res = 1 / val; break;
+                case 'fact': res = factorial(val); break;
+                case 'exp': res = Math.exp(1); isNewInput = true; break;
+                case 'pi': res = Math.PI; isNewInput = true; break; 
+                case 'sign': res = val * -1; break;
+                case 'abs': res = Math.abs(val); break;
+                case 'pow': operator('pow'); return;
+            }
+            if (func !== 'pow') { currentVal = res.toString(); isNewInput = true; updateDisplay(); }
+        }
+
+        function factorial(n) {
+            if (n < 0) return NaN;
+            if (n === 0 || n === 1) return 1;
+            let f = 1; for(let i=2; i<=n; i++) f *= i; return f;
+        }
+
+        function mem(action) {
+            const val = parseFloat(currentVal);
+            switch(action) {
+                case 'MS': memory = val; isNewInput = true; break;
+                case 'MR': currentVal = memory.toString(); isNewInput = true; updateDisplay(); break;
+                case 'MC': memory = 0; break;
+            }
+        }
+
+        // --- EXTENDED QUESTION DATABASE ---
+        // Includes: PYQs (1-91), Practice (1-42), Solved Ex (1-24) plus generated variations
+        const questionData = {
+            "First Order ODEs": [
+                {id: 1, q: "The solution of \\(\\frac{dy}{dx} + y^2 = 0\\) is:", opts: ["\\(y = \\frac{1}{x+c}\\)", "\\(y = \\frac{-x^3}{3} + c\\)", "\\(y = ce^x\\)", "unsolvable"], ans: "A", exp: "Separable: dy/y^2 = -dx => -1/y = -x - c => y = 1/(x+c).", type: "gate_pyq"},
+                {id: 2, q: "Biotransformation: \\(\\frac{dx}{dt} + kx^2 = 0\\), \\(x(0) = a\\). Solution:", opts: ["\\(x = ae^{-kt}\\)", "\\(\\frac{1}{x} = \\frac{1}{a} + kt\\)", "\\(x = a(1-e^{-kt})\\)", "\\(x = a + kt\\)"], ans: "B", exp: "Separable: dx/x^2 = -k dt => 1/x = kt + C. At t=0, C=1/a.", type: "gate_pyq"},
+                {id: 4, q: "Solution of \\(x'(t) = -3x(t)\\), \\(x(0) = x_0\\):", opts: ["\\(x(t) = x_0 e^{-3t}\\)", "\\(x(t) = x_0 e^{-3}\\)", "\\(x(t) = x_0 e^{-1/3}\\)", "\\(x(t) = x_0 e^{-1}\\)"], ans: "A", exp: "ln x = -3t + C => x = x0 e^(-3t).", type: "gate_pyq"},
+                {id: 16, q: "Solution of \\(\\frac{dy}{dx} = y^2\\) with \\(y(0)=1\\) bounded in:", opts: ["\\(-\\infty \\le x \\le \\infty\\)", "\\(-\\infty \\le x \\le 1\\)", "\\(x < 1\\) and \\(x > 1\\)", "\\(-2 \\le x \\le 2\\)"], ans: "C", exp: "y = 1/(1-x). Discontinuous at x=1.", type: "gate_pyq"},
+                {id: 17, q: "Which is a solution to \\(\\frac{dx}{dt} + 3x = 0\\)?", opts: ["\\(x(t) = 3e^{-t}\\)", "\\(x(t) = 2e^{-3t}\\)", "\\(x(t) = -1.5t^2\\)", "\\(x(t) = 3t^2\\)"], ans: "B", exp: "General solution x = c e^(-3t).", type: "gate_pyq"},
+                {id: 20, q: "Solution of \\(\\frac{dy}{dx} = -\\frac{x}{y}\\) at \\(x=1, y=\\sqrt{3}\\):", opts: ["\\(x - y^2 = -2\\)", "\\(x + y^2 = 4\\)", "\\(x^2 - y^2 = -2\\)", "\\(x^2 + y^2 = 4\\)"], ans: "D", exp: "y dy = -x dx => x^2 + y^2 = C. At (1, sqrt3), C=4.", type: "gate_pyq"},
+                {id: 23, q: "Solution of \\(3y\\frac{dy}{dx} + 2x = 0\\) represents:", opts: ["Ellipses", "Circles", "Parabolas", "Hyperbolas"], ans: "A", exp: "3y dy = -2x dx => 3y^2/2 + x^2 = C (Ellipse).", type: "gate_pyq"},
+                {id: 25, q: "Solution of \\(x\\frac{dy}{dx} + y = x^4\\) with \\(y(1) = 6/5\\):", opts: ["\\(y = \\frac{x^4}{5} + \\frac{1}{x}\\)", "\\(y = \\frac{4x^4}{5} + \\frac{4}{5x}\\)", "\\(y = \\frac{x^4}{5} + 1\\)", "\\(y = \\frac{x^5}{5} + 1\\)"], ans: "A", exp: "Linear: IF=x. xy = x^5/5 + C. C=1.", type: "gate_pyq"},
+                {id: 31, q: "Solution for \\(\\frac{dy}{dx} = e^{-3x}\\) is:", opts: ["\\(-\\frac{1}{3}e^{-3x} + K\\)", "\\(-\\frac{1}{3}e^{3x} + K\\)", "\\(-3e^{-3x} + K\\)", "\\(-3e^{-x} + K\\)"], ans: "A", exp: "Direct integration.", type: "gate_pyq"},
+                {id: 32, q: "Solution of \\(\\frac{dy}{dx} = ky\\), \\(y(0) = c\\):", opts: ["\\(x = ce^{-ky}\\)", "\\(x = ke^{cy}\\)", "\\(y = ce^{kx}\\)", "\\(y = ce^{-kx}\\)"], ans: "C", exp: "Exponential growth.", type: "gate_pyq"},
+                {id: 33, q: "General solution of \\(\\frac{dy}{dx} = (1+y^2)x\\):", opts: ["\\(y = \\tan(x^2/2) + \\tan c\\)", "\\(y = \\tan^2(x/2 + c)\\)", "\\(y = \\tan^2(x/2) + c\\)", "\\(y = \\tan(x^2/2 + c)\\)"], ans: "D", exp: "dy/(1+y^2) = x dx => arctan y = x^2/2 + c.", type: "gate_pyq"},
+                {id: 34, q: "Solution of \\(\\frac{dy}{dx} + \\frac{y}{x} = x\\), \\(y(1)=1\\):", opts: ["\\(y = 2/3x^2 + x/3\\)", "\\(y = x/2 + 1/2x\\)", "\\(y = 2/3 + x/3\\)", "\\(y = x^2/3 + 2/3x\\)"], ans: "D", exp: "IF=x. xy = x^3/3 + C. C=2/3.", type: "gate_pyq"},
+                {id: 48, q: "Solution of \\(\\frac{dy}{dx} = -2xy\\), \\(y(0)=2\\):", opts: ["\\(1 + e^{-x^2}\\)", "\\(2e^{-x^2}\\)", "\\(1 + e^{x^2}\\)", "\\(2e^{x^2}\\)"], ans: "B", exp: "ln y = -x^2 + C. y = A e^(-x^2).", type: "gate_pyq"},
+                {id: 49, q: "Integrating factor for \\(\\frac{dP}{dt} + k_2 P = k_1 L_0 e^{-k_1 t}\\):", opts: ["\\(e^{-k_1 t}\\)", "\\(e^{-k_2 t}\\)", "\\(e^{k_1 t}\\)", "\\(e^{k_2 t}\\)"], ans: "D", exp: "IF = exp(integral k2 dt).", type: "gate_pyq"},
+                {id: 53, q: "General solution of \\(\\frac{dy}{dx} = \\cos(x+y)\\):", opts: ["\\(y + \\sin(x+y) = x + c\\)", "\\(\\tan(\\frac{x+y}{2}) = y + c\\)", "\\(\\cos(\\frac{x+y}{2}) = x + c\\)", "\\(\\tan(\\frac{x+y}{2}) = x + c\\)"], ans: "D", exp: "Sub x+y=t.", type: "gate_pyq"},
+                {id: 56, q: "Integrating factor for \\(\\frac{dy}{dx} - \\frac{y}{1+x} = 1+x\\):", opts: ["\\(1/(1+x)\\)", "\\(1+x\\)", "\\(x(1+x)\\)", "\\(x/(1+x)\\)"], ans: "A", exp: "IF = exp(-ln(1+x)) = 1/(1+x).", type: "gate_pyq"},
+                {id: 60, q: "Solution of \\(\\frac{dx}{dt} = 10 - 0.2x\\), \\(x(0)=1\\):", opts: ["\\(2 - e^{-0.2t}\\)", "\\(2 - e^{0.2t}\\)", "\\(50 - 49e^{-0.2t}\\)", "\\(50 - 49e^{0.2t}\\)"], ans: "C", exp: "Linear ODE. x = 50 + C e^(-0.2t).", type: "gate_pyq"},
+                {id: 101, q: "Solve \\((x+1)\\frac{dy}{dx}=2xy\\).", opts: ["\\(y/x=C\\)", "\\(\\log y = 2[x-\\log|x+1|]+C\\)", "\\(\\log y = 1/x+1\\)", "\\(\\log x = \\log(y+1)+C\\)"], ans: "B", exp: "Variable Separable.", type: "practice"},
+                {id: 102, q: "Solve \\(x\\frac{dy}{dx}=y-x\\tan(y/x)\\).", opts: ["\\(|\\sin(y/x)|=|C/x|\\)", "\\(|\\cos(x/y)|=|xC|\\)", "\\(|\\sin(y/x)|=|yC|\\)", "\\(|\\sec(x/y)|=|C/y|\\)"], ans: "A", exp: "Homogeneous. y=vx.", type: "practice"},
+                {id: 103, q: "Solve \\(\\frac{dy}{dx} + y \\sec x = \\tan x\\).", opts: ["\\(y(\\sec x+\\tan x) = \\sec x+\\tan x - x+C\\)", "\\(y \\tan x = \\sec x+x+C\\)", "\\(y = \\tan x + C\\)", "\\(y \\sec x = \\tan x + C\\)"], ans: "A", exp: "Linear. IF = sec x + tan x.", type: "practice"},
+                {id: 104, q: "Solve \\((x^2-2xy-y^2)dx - (x+y)^2 dy = 0\\).", opts: ["\\(x^3/3 - x^2y - y^2x - y^3/3 = C\\)", "\\(x^2 + y^2 = C\\)", "\\(x^3 + y^3 = C\\)", "\\(x^2 - y^2 = C\\)"], ans: "A", exp: "Exact equation.", type: "practice"},
+                {id: 105, q: "Solve \\(\\frac{dy}{dx} = \\cos(y - x\\frac{dy}{dx})\\).", opts: ["\\(y = Cx + \\cos^{-1}C\\)", "\\(y = x^2 + C\\)", "\\(y = \\cos x + C\\)", "\\(y = x + C\\)"], ans: "A", exp: "Clairaut's form y = px + f(p).", type: "practice"},
+                {id: 301, q: "Solve \\(\\frac{dy}{dx} = e^{x-y} + x^2 e^{-y}\\).", opts: ["\\(e^y = e^x + x^3/3 + C\\)", "\\(e^y = e^x + x^2 + C\\)", "\\(e^{-y} = e^x + C\\)", "\\(y = x + C\\)"], ans: "A", exp: "Multiply by e^y: e^y dy = (e^x + x^2)dx.", type: "practice"},
+                {id: 302, q: "IF of \\(x \\frac{dy}{dx} - y = x^2\\) is:", opts: ["\\(1/x\\)", "\\(x\\)", "\\(1/x^2\\)", "\\(\\ln x\\)"], ans: "A", exp: "P = -1/x. IF = e^(-ln x) = 1/x.", type: "practice"},
+                {id: 303, q: "Solution of \\(\\frac{dy}{dx} + y = e^{-x}\\) is:", opts: ["\\(y = (x+c)e^{-x}\\)", "\\(y = (x+c)e^x\\)", "\\(y = x e^{-x} + c\\)", "\\(y = e^{-x} + c\\)"], ans: "A", exp: "IF=e^x. y e^x = x + c.", type: "practice"},
+                {id: 304, q: "Degree of \\((\\frac{d^2y}{dx^2})^3 + (\\frac{dy}{dx})^4 = 0\\) is:", opts: ["3", "4", "2", "1"], ans: "A", exp: "Power of highest derivative.", type: "practice"},
+                {id: 305, q: "Order of \\(\\frac{d^3y}{dx^3} + 2(\\frac{d^2y}{dx^2})^5 = 0\\) is:", opts: ["3", "5", "2", "8"], ans: "A", exp: "Highest derivative is 3rd order.", type: "practice"},
+                {id: 306, q: "Solution of \\(\\frac{dy}{dx} = \\frac{y}{x} + \\tan(\\frac{y}{x})\\) is:", opts: ["\\(\\sin(y/x) = Cx\\)", "\\(\\sin(y/x) = C\\)", "\\(\\cos(y/x) = Cx\\)", "\\(\\tan(y/x) = Cx\\)"], ans: "A", exp: "Homogeneous. sin(v) = Cx.", type: "practice"},
+                {id: 307, q: "Orthogonal trajectory of \\(xy=c\\) is:", opts: ["\\(x^2 - y^2 = k\\)", "\\(x^2 + y^2 = k\\)", "\\(y = kx\\)", "\\(y^2 = kx\\)"], ans: "A", exp: "dy/dx = -y/x -> -dx/dy = -y/x -> y dy = x dx.", type: "practice"},
+                {id: 308, q: "IF of \\((1+x^2)dy + 2xy dx = \\cot x dx\\) is:", opts: ["\\(1+x^2\\)", "\\(\\log(1+x^2)\\)", "\\(x^2\\)", "\\(1\\)"], ans: "A", exp: "Exact or Linear form.", type: "practice"},
+                {id: 309, q: "Solve \\(\\frac{dr}{d\\theta} + r \\tan \\theta = \\cos \\theta\\).", opts: ["\\(r = \\sin \\theta + C \\cos \\theta\\)", "\\(r = \\cos \\theta + C\\)", "\\(r = \\theta \\cos \\theta + C \\cos \\theta\\)", "\\(r = \\tan \\theta + C\\)"], ans: "C", exp: "IF = sec theta. r sec theta = theta + C.", type: "practice"}
+            ],
+            "Higher Order Linear ODEs": [
+                {id: 5, q: "Degree of \\(\\frac{d^2y}{dx^2} - 5\\frac{dy}{dx} + 6y = 0\\) is:", opts: ["1", "2", "5", "6"], ans: "A", exp: "Power of highest derivative is 1.", type: "gate_pyq"},
+                {id: 12, q: "PI of \\(y'' + 4y' + 3y = 3e^{2x}\\) is:", opts: ["\\(e^{2x}/5\\)", "\\(e^{2x}/15\\)", "\\(3e^{2x}\\)", "\\(e^{-2x}\\)"], ans: "A", exp: "PI = 3e^2x / (4+8+3) = 1/5 e^2x.", type: "gate_pyq"},
+                {id: 14, q: "Degree of \\(\\frac{d^2x}{dt^2} + 2x^3 = 0\\) is:", opts: ["1", "2", "3", "0"], ans: "A", exp: "Highest derivative power is 1.", type: "gate_pyq"},
+                {id: 18, q: "General solution of \\(y'' + y = 0\\):", opts: ["\\(P \\cos x + Q \\sin x\\)", "\\(P e^x + Q e^{-x}\\)", "\\(P \\cos x\\)", "\\(P \\sin x\\)"], ans: "A", exp: "Roots +/- i.", type: "gate_pyq"},
+                {id: 29, q: "Solution to \\(y'' + y' - 6y = 0\\):", opts: ["\\(c_1 e^{-3x} + c_2 e^{2x}\\)", "\\(c_1 e^{3x} + c_2 e^{-2x}\\)", "\\(c_1 e^{2x} + c_2 e^{3x}\\)", "\\(c_1 e^{-2x} + c_2 e^{-3x}\\)"], ans: "A", exp: "Roots -3, 2.", type: "gate_pyq"},
+                {id: 30, q: "Solution of \\(x'' + 6x' + 8x = 0\\), \\(x(0)=1, x'(0)=0\\):", opts: ["\\(2e^{-2t} - e^{-4t}\\)", "\\(2e^{-4t} - e^{-2t}\\)", "\\(e^{-2t} + e^{-4t}\\)", "\\(e^{-2t} - e^{-4t}\\)"], ans: "A", exp: "Roots -2, -4. x = 2e^-2t - e^-4t.", type: "gate_pyq"},
+                {id: 42, q: "If \\(y'' + 2\\alpha y' + y = 0\\) has equal roots, \\(\\alpha\\) is:", opts: ["\\(\\pm 1\\)", "0", "2", "4"], ans: "A", exp: "Discriminant 4a^2 - 4 = 0.", type: "gate_pyq"},
+                {id: 45, q: "General solution of \\(x'' + 2x' + x = 0\\):", opts: ["\\((a+bt)e^{-t}\\)", "\\(ae^{-t} + be^t\\)", "\\(e^{-t}\\)", "\\(e^t\\)"], ans: "A", exp: "Roots -1, -1.", type: "gate_pyq"},
+                {id: 46, q: "Solution for \\(x'' = -9x\\), \\(x(0)=1, x'(0)=1\\):", opts: ["\\(\\frac{1}{3}\\sin 3t + \\cos 3t\\)", "\\(\\sin 3t + \\cos 3t\\)", "\\(\\frac{1}{3}\\cos 3t + \\sin 3t\\)", "\\(\\cos 3t\\)"], ans: "A", exp: "x = A cos 3t + B sin 3t. A=1, 3B=1.", type: "gate_pyq"},
+                {id: 52, q: "If \\(y'' = 0\\), \\(y(0)=5, y'(10)=2\\), then \\(y(15)\\) is:", opts: ["35", "15", "25", "30"], ans: "A", exp: "y = 2x + 5. y(15) = 35.", type: "gate_pyq"},
+                {id: 54, q: "Wronskian of \\(x'' + x = 0\\) solutions at \\(t=\\pi/2\\):", opts: ["1", "-1", "0", "2"], ans: "A", exp: "W(sin, cos) = 1.", type: "gate_pyq"},
+                {id: 64, q: "Solution of \\(y'' = y\\) through (0,0) and (ln 2, 3/4):", opts: ["\\(0.5(e^x - e^{-x})\\)", "\\(e^x - e^{-x}\\)", "\\(e^x + e^{-x}\\)", "\\(0.5e^x\\)"], ans: "A", exp: "y = 0.5 sinh x * 2.", type: "gate_pyq"},
+                {id: 76, q: "Solution of \\(y'' + 12y' + 36y = 0\\), \\(y(0)=3, y'(0)=-36\\):", opts: ["\\((3-18x)e^{-6x}\\)", "\\((3-12x)e^{-6x}\\)", "\\(3e^{-6x}\\)", "\\(e^{-6x}\\)"], ans: "A", exp: "Roots -6, -6.", type: "gate_pyq"},
+                {id: 77, q: "For \\(y'' - 4y' + 4y = 0\\), \\(y(0)=0, y'(0)=1\\), find \\(y(1)\\):", opts: ["7.38", "2.71", "1.00", "0"], ans: "A", exp: "y = x e^2x. y(1) = e^2.", type: "gate_pyq"},
+                {id: 88, q: "Value of y at x=1 for \\(3y'' + 27y = 0\\), \\(y(0)=0, y'(0)=2000\\):", opts: ["94.08", "100", "50", "0"], ans: "A", exp: "y = (2000/3) sin 3x. y(1) ~ 94.08.", type: "gate_pyq"},
+                {id: 91, q: "PI of \\(y'' - 4y' + 3y = 2t - 3t^2\\) is:", opts: ["\\(-2 - 2t - t^2\\)", "\\(-t^2\\)", "\\(2t - 3t^2\\)", "\\(t^2 + 2t\\)"], ans: "A", exp: "Polynomial method.", type: "gate_pyq"},
+                {id: 109, q: "Solve \\(9y'' + 6y' + y = 0\\), \\(y(0)=4, y'(0)=-1/3\\).", opts: ["\\(y=(4+x)e^{-x/3}\\)", "\\(y=(4-x)e^{-x/3}\\)", "\\(y=4e^{-x/3}\\)", "\\(y=e^{-x/3}\\)"], ans: "A", exp: "Roots -1/3, -1/3.", type: "practice"},
+                {id: 110, q: "Solve \\(2y'' - 4y' + 8y = 0\\).", opts: ["\\(e^x(A \\cos \\sqrt{3}x + B \\sin \\sqrt{3}x)\\)", "\\(e^{-x}(A \\cos \\sqrt{3}x + B \\sin \\sqrt{3}x)\\)", "\\(e^x(A \\cos x + B \\sin x)\\)", "\\(e^{2x}\\)"], ans: "A", exp: "Roots 1 +/- i sqrt(3).", type: "practice"},
+                {id: 111, q: "Solve \\(y'' - 16y = 0\\).", opts: ["\\(c_1 e^{4x} + c_2 e^{-4x}\\)", "\\(c_1 \\cos 4x + c_2 \\sin 4x\\)", "\\((c_1+c_2x)e^{4x}\\)", "\\(e^{4x}\\)"], ans: "A", exp: "Roots 4, -4.", type: "practice"},
+                {id: 113, q: "Solve \\(y'' + 2y' + y = e^{-4x}\\).", opts: ["\\((Ax+B)e^{-x} + e^{-4x}/9\\)", "\\(e^{-4x}/9\\)", "\\((Ax+B)e^{-x}\\)", "\\(e^{-x}\\)"], ans: "A", exp: "PI = e^-4x / (16-8+1).", type: "practice"},
+                {id: 114, q: "Solve \\((D^2 + 4)y = \\cos 2x\\).", opts: ["\\(A \\cos 2x + B \\sin 2x + (x/4)\\sin 2x\\)", "\\(A \\cos 2x + B \\sin 2x\\)", "\\((x/4)\\sin 2x\\)", "\\(x \\sin 2x\\)"], ans: "A", exp: "Resonance case.", type: "practice"},
+                {id: 116, q: "Solve Euler-Cauchy \\(x^2 y'' - 5xy' + 9y = 0\\).", opts: ["\\((C_1 + C_2 \\ln x)x^3\\)", "\\(C_1 x^3 + C_2 x^{-3}\\)", "\\(x^3\\)", "\\(x^5\\)"], ans: "A", exp: "m(m-1)-5m+9=0 => (m-3)^2=0.", type: "practice"},
+                {id: 310, q: "PI of \\((D^2-1)y = x^2\\) is:", opts: ["\\(-(x^2+2)\\)", "\\(x^2+2\\)", "\\(-(x^2-2)\\)", "\\(x^2\\)"], ans: "A", exp: "-(1-D^2)^-1 x^2 = -(1+D^2)x^2 = -(x^2+2).", type: "practice"},
+                {id: 311, q: "Roots of \\(y''' - 6y'' + 11y' - 6y = 0\\) are:", opts: ["1, 2, 3", "1, 1, 2", "1, -2, 3", "-1, -2, -3"], ans: "A", exp: "Factor (D-1)(D-2)(D-3).", type: "practice"},
+                {id: 312, q: "For \\(y'' + 9y = \\sec 3x\\), Wronskian is:", opts: ["3", "1", "9", "0"], ans: "A", exp: "y1=cos3x, y2=sin3x. W=3.", type: "practice"},
+                {id: 313, q: "PI of \\(y'' + y = \\sin x\\) is:", opts: ["\\(-x/2 \\cos x\\)", "\\(x/2 \\sin x\\)", "\\(-x/2 \\sin x\\)", "\\(x \\cos x\\)"], ans: "A", exp: "Resonance. x/(2D) sin x = x/2 (-cos x) ?? Check sign.", type: "practice"},
+                {id: 314, q: "Solution of \\(x^2 y'' - 2xy' + 2y = 0\\):", opts: ["\\(C_1 x + C_2 x^2\\)", "\\(C_1 x + C_2/x\\)", "\\(C_1 x^2 + C_2/x\\)", "\\(x^3\\)"], ans: "A", exp: "m(m-1)-2m+2=0 => m^2-3m+2=0 => 1, 2.", type: "practice"},
+                {id: 315, q: "CF of \\(y'' + 4y = \\tan 2x\\) is:", opts: ["\\(c_1 \\cos 2x + c_2 \\sin 2x\\)", "\\(c_1 e^{2x} + c_2 e^{-2x}\\)", "\\(e^{2x}\\)", "\\(\\cos 2x\\)"], ans: "A", exp: "Roots +/- 2i.", type: "practice"},
+                {id: 316, q: "If roots are 0, 0, 2, solution is:", opts: ["\\(c_1 + c_2 x + c_3 e^{2x}\\)", "\\(c_1 + c_2 e^{2x}\\)", "\\(c_1 e^{2x}\\)", "\\((c_1+c_2)e^{2x}\\)"], ans: "A", exp: "Repeated root 0.", type: "practice"},
+                {id: 317, q: "Solution of \\(y'' - 2y' + 5y = 0\\):", opts: ["\\(e^x(A \\cos 2x + B \\sin 2x)\\)", "\\(e^{-x}(A \\cos 2x + B \\sin 2x)\\)", "\\(e^x \\cos 2x\\)", "\\(e^x \\sin 2x\\)"], ans: "A", exp: "Roots 1 +/- 2i.", type: "practice"},
+                {id: 318, q: "PI for \\((D-1)^2 y = e^x\\) is:", opts: ["\\(x^2 e^x / 2\\)", "\\(x e^x\\)", "\\(e^x\\)", "\\(x^2 e^x\\)"], ans: "A", exp: "Case of failure twice. x^2/2! e^x.", type: "practice"},
+                {id: 319, q: "Solution of \\(y''' = 0\\):", opts: ["\\(c_1 + c_2 x + c_3 x^2\\)", "\\(c_1 x + c_2 x^2\\)", "\\(c_1 + c_2 x\\)", "\\(x^3\\)"], ans: "A", exp: "Integrate thrice.", type: "practice"},
+                {id: 320, q: "Equation with roots 1, -1 is:", opts: ["\\(y'' - y = 0\\)", "\\(y'' + y = 0\\)", "\\(y'' + y' = 0\\)", "\\(y'' - y' = 0\\)"], ans: "A", exp: "(D-1)(D+1) = D^2-1.", type: "practice"}
+            ],
+            "PDEs & Laplace Transforms": [
+                {id: 39, q: "Solution to \\(d^2u/dx^2 - k du/dx = 0\\), \\(u(0)=0, u(L)=U\\):", opts: ["\\(U(1-e^{kx})/(1-e^{kL})\\)", "\\(Ux/L\\)", "\\(U(1-e^{-kx})/(1-e^{-kL})\\)", "\\(U(1+e^{kx})/(1+e^{kL})\\)"], ans: "A", exp: "Roots 0, k. u = c1 + c2 e^kx.", type: "gate_pyq"},
+                {id: 73, q: "Type of PDE \\(u_{xx} + u_{yy} + 3u_{xy} + 2u_x - u_y = 0\\):", opts: ["Hyperbolic", "Elliptic", "Parabolic", "None"], ans: "A", exp: "B^2-4AC = 3^2 - 4(1)(1) = 5 > 0.", type: "gate_pyq"},
+                {id: 74, q: "Solution of \\(u_t = \\alpha u_{xx}\\) is form:", opts: ["\\(Ce^{kt}(C_1 e^{\\sqrt{k/\\alpha}x} + C_2 e^{-\\sqrt{k/\\alpha}x})\\)", "Trig in t", "Exp in x only", "None"], ans: "A", exp: "Heat equation separation.", type: "gate_pyq"},
+                {id: 82, q: "Solution of \\(u_y + c u_x = 0\\) is:", opts: ["\\(u = f(x-cy)\\)", "\\(u = f(x+cy)\\)", "\\(u = f(cx+y)\\)", "\\(u = f(cx-y)\\)"], ans: "A", exp: "Lagrange method.", type: "gate_pyq"},
+                {id: 84, q: "For \\(3u_{xx} + B u_{xy} + 3u_{yy} + 4u = 0\\) to be parabolic, \\(B^2\\) is:", opts: ["36", "9", "3", "0"], ans: "A", exp: "B^2 - 4(3)(3) = 0 => B^2 = 36.", type: "gate_pyq"},
+                {id: 27, q: "Solution of \\(y'' - y/L^2 = 0\\), \\(y(0)=k, y(\\infty)=0\\):", opts: ["\\(k e^{-x/L}\\)", "\\(k e^{x/L}\\)", "\\(k e^{-x/\\sqrt{L}}\\) ", "\\(k e^{x/\\sqrt{L}}\\)" ], ans: "A", exp: "Roots +/- 1/L. Decay term needed.", type: "gate_pyq"},
+                {id: 28, q: "Solve mass-spring \\(f'' + 3f' + 2f = e^{-t}\\), zero ICs:", opts: ["\\(e^{-2t} - e^{-t} + te^{-t}\\)", "\\(e^{-2t} + e^{-t}\\)", "\\(e^{-t}\\)", "\\(0\\)"], ans: "A", exp: "Laplace transform.", type: "gate_pyq"},
+                {id: 29, q: "Solve \\(y'' + y' - 2y = 4\\), \\(y(0)=2, y'(0)=1\\) via Laplace:", opts: ["\\(-2 + 3e^t + e^{-2t}\\)", "\\(2 + 3e^t\\)", "\\(-2 - 3e^t\\)", "\\(e^{2t}\\)"], ans: "A", exp: "Laplace method.", type: "gate_pyq"},
+                {id: 14, q: "Solve \\(y''' + 2y'' - y' - 2y = 0\\) via Laplace, \\(y''(0)=6\\):", opts: ["\\(e^t - 3e^{-t} + 2e^{-2t}\\)", "\\(e^t + e^{-t}\\)", "\\(e^{2t}\\)", "\\(0\\)"], ans: "A", exp: "Solved Example 14.", type: "solved_example"},
+                {id: 15, q: "Solve \\(y'' - 3y' + 2y = 4\\), \\(y(0)=1\\) via Laplace:", opts: ["\\(2 - 2e^t + e^{2t}\\)", "\\(2 + e^t\\)", "\\(1 - e^t\\)", "\\(e^{2t}\\)"], ans: "A", exp: "Solved Example 15.", type: "solved_example"},
+                {id: 16, q: "Solve \\(y'' + 4y' + 5y = 10e^t\\) via Laplace:", opts: ["\\(e^{-2t}\\sin t + e^t\\)", "\\(e^t\\)", "\\(e^{-2t}\\)", "\\(\\sin t\\)"], ans: "A", exp: "Solved Example 16.", type: "solved_example"},
+                {id: 19, q: "Solve PDE \\(u_x = u_t + u\\), \\(u(x,0)=4e^{-3x}\\):", opts: ["\\(4e^{-(3x+4t)}\\)", "\\(4e^{-3x}\\)", "\\(e^{-(3x+4t)}\\)", "\\(4e^{4t}\\)"], ans: "A", exp: "Solved Example 19.", type: "solved_example"},
+                {id: 20, q: "Solve PDE \\(u_x = 4u_y\\), \\(u(0,y)=8e^{-3y}\\):", opts: ["\\(8e^{-3(4x+y)}\\)", "\\(8e^{-3y}\\)", "\\(e^{-12x}\\)", "\\(8e^{-(x+y)}\\)"], ans: "A", exp: "Solved Example 20.", type: "solved_example"},
+                {id: 21, q: "Solve PDE \\(3u_x + 2u_y = 0\\), \\(u(x,0)=4e^{-x}\\):", opts: ["\\(4e^{-0.5(2x+3y)}\\)", "\\(4e^{-x}\\)", "\\(e^{-y}\\)", "\\(4e^{-(x+y)}\\)"], ans: "A", exp: "Solved Example 21.", type: "solved_example"},
+                {id: 321, q: "Laplace of \\(e^{at}\\) is:", opts: ["\\(1/(s-a)\\)", "\\(1/(s+a)\\)", "\\(s/(s^2+a^2)\\)", "\\(a/(s^2+a^2)\\)"], ans: "A", exp: "Standard formula.", type: "practice"},
+                {id: 322, q: "Laplace of \\(\\sin at\\) is:", opts: ["\\(a/(s^2+a^2)\\)", "\\(s/(s^2+a^2)\\)", "\\(1/(s-a)\\)", "\\(a/(s^2-a^2)\\)"], ans: "A", exp: "Standard formula.", type: "practice"},
+                {id: 323, q: "Laplace of \\(t^n\\) is:", opts: ["\\(n!/s^{n+1}\\)", "\\(n!/s^n\\)", "\\(1/s^n\\)", "\\(n/s^{n+1}\\)"], ans: "A", exp: "Standard formula.", type: "practice"},
+                {id: 324, q: "Inverse Laplace of \\(1/(s-2)\\):", opts: ["\\(e^{2t}\\)", "\\(e^{-2t}\\)", "\\(t^2\\)", "\\(\\sin 2t\\)"], ans: "A", exp: "Standard inverse.", type: "practice"},
+                {id: 325, q: "1D Heat Equation is:", opts: ["\\(u_t = c^2 u_{xx}\\)", "\\(u_{tt} = c^2 u_{xx}\\)", "\\(u_{xx} + u_{yy} = 0\\)", "\\(u_t + u_x = 0\\)"], ans: "A", exp: "Definition.", type: "practice"},
+                {id: 326, q: "1D Wave Equation is:", opts: ["\\(u_{tt} = c^2 u_{xx}\\)", "\\(u_t = c^2 u_{xx}\\)", "\\(u_{xx} + u_{yy} = 0\\)", "\\(u_{tt} + u_{xx} = 0\\)"], ans: "A", exp: "Definition.", type: "practice"},
+                {id: 327, q: "2D Laplace Equation is:", opts: ["\\(u_{xx} + u_{yy} = 0\\)", "\\(u_t = c^2 u_{xx}\\)", "\\(u_{tt} = c^2 u_{xx}\\)", "\\(u_{xx} - u_{yy} = 0\\)"], ans: "A", exp: "Definition.", type: "practice"},
+                {id: 328, q: "Classification of \\(u_{xx} - u_{yy} = 0\\):", opts: ["Hyperbolic", "Parabolic", "Elliptic", "None"], ans: "A", exp: "B^2-4AC > 0.", type: "practice"},
+                {id: 329, q: "Classification of \\(u_{xx} + u_{yy} = 0\\):", opts: ["Elliptic", "Parabolic", "Hyperbolic", "None"], ans: "A", exp: "B^2-4AC < 0.", type: "practice"},
+                {id: 330, q: "Classification of \\(u_{xx} = u_t\\):", opts: ["Parabolic", "Elliptic", "Hyperbolic", "None"], ans: "A", exp: "B^2-4AC = 0.", type: "practice"},
+                {id: 331, q: "Laplace of \\(u'(t)\\) is:", opts: ["\\(sU(s) - u(0)\\)", "\\(sU(s)\\)", "\\(U(s)/s\\)", "\\(s^2 U(s)\\)"], ans: "A", exp: "Derivative property.", type: "practice"},
+                {id: 332, q: "Laplace of \\(e^{at} f(t)\\) is:", opts: ["\\(F(s-a)\\)", "\\(F(s+a)\\)", "\\(e^{-as} F(s)\\)", "\\(F(s)/a\\)"], ans: "A", exp: "Shifting property.", type: "practice"},
+                {id: 333, q: "Inverse Laplace of \\(s/(s^2+k^2)\\):", opts: ["\\(\\cos kt\\)", "\\(\\sin kt\\)", "\\(e^{kt}\\)", "\\(\\cosh kt\\)"], ans: "A", exp: "Standard inverse.", type: "practice"},
+                {id: 334, q: "Solution of \\(u_x = 0\\) is:", opts: ["\\(f(y)\\)", "\\(f(x)\\)", "\\(xy\\)", "\\(0\\)"], ans: "A", exp: "Partial integration.", type: "practice"},
+                {id: 335, q: "Solution of \\(u_{xy} = 0\\) is:", opts: ["\\(f(x) + g(y)\\)", "\\(f(x)g(y)\\)", "\\(f(x+y)\\)", "\\(f(xy)\\)"], ans: "A", exp: "Integrate wrt x then y.", type: "practice"},
+                {id: 336, q: "Method of separation of variables assumes u(x,t) as:", opts: ["\\(X(x)T(t)\\)", "\\(X(x)+T(t)\\)", "\\(X(t)T(x)\\)", "\\(f(x+ct)\\)"], ans: "A", exp: "Product form.", type: "practice"},
+                {id: 337, q: "D'Alembert's solution applies to:", opts: ["Wave equation", "Heat equation", "Laplace equation", "Poisson equation"], ans: "A", exp: "Traveling wave solution.", type: "practice"},
+                {id: 338, q: "Laplace of \\(\\delta(t)\\) (Impulse) is:", opts: ["1", "0", "s", "1/s"], ans: "A", exp: "Standard property.", type: "practice"},
+                {id: 339, q: "Convolution theorem involves:", opts: ["Product of transforms", "Sum of transforms", "Difference of transforms", "Division"], ans: "A", exp: "L(f*g) = F(s)G(s).", type: "practice"},
+                {id: 340, q: "Final Value Theorem gives:", opts: ["\\(\\lim_{s\\to 0} sF(s)\\)", "\\(\\lim_{s\\to \\infty} sF(s)\\)", "\\(F(0)\\)", "\\(F(\\infty)\\)"], ans: "A", exp: "Limit property.", type: "practice"}
+            ]
+        };
+
+        // --- STATE VARIABLES ---
+        let currentQuestions = [];
+        let currentIndex = 0;
+        let responses = {}; 
+        
+        let examTimerInterval, qTimerInterval;
+        let examSeconds = 0; 
+        let qSeconds = 0; 
+
+        // --- INIT ---
+        window.onload = function() {
+            startExamTimer();
+            shuffleAllData(); 
+            document.getElementById('topicSelect').selectedIndex = 0; 
+            loadQuestions();
+        };
+
+        function shuffleAllData() {
+            for (const topic in questionData) {
+                // Fisher-Yates shuffle
+                for (let i = questionData[topic].length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [questionData[topic][i], questionData[topic][j]] = [questionData[topic][j], questionData[topic][i]];
+                }
+            }
+        }
+
+        function startExamTimer() {
+            examTimerInterval = setInterval(() => {
+                examSeconds++;
+                document.getElementById('examTimer').textContent = formatTime(examSeconds);
+            }, 1000);
+        }
+
+        function formatTime(s) {
+            let m = Math.floor(s / 60);
+            let sec = s % 60;
+            return `${m < 10 ? '0' : ''}${m}:${sec < 10 ? '0' : ''}${sec}`;
+        }
+
+        function loadQuestions() {
+            const topic = document.getElementById('topicSelect').value;
+            currentQuestions = questionData[topic] || [];
+            
+            // Assign Metadata
+            currentQuestions = currentQuestions.map((q, i) => {
+                const marks = (i % 3 === 0) ? 2 : 1; 
+                return { ...q, marks: marks };
+            });
+
+            currentIndex = 0;
+            renderPalette();
+            loadQuestion(0);
+        }
+
+        // --- RENDERING ---
+        function loadQuestion(index) {
+            stopQTimer(); 
+            currentIndex = index;
+            const q = currentQuestions[index];
+            const resp = responses[q.id];
+            
+            // Headers
+            const typeMap = { 'gate_pyq': {t:'GATE PYQ', c:'bg-pyq'}, 'solved_example': {t:'Solved Ex', c:'bg-example'}, 'practice': {t:'Practice', c:'bg-practice'} };
+            const tInfo = typeMap[q.type] || typeMap['practice'];
+            document.getElementById('typeBadge').textContent = tInfo.t;
+            document.getElementById('typeBadge').className = `q-type-badge ${tInfo.c}`;
+            document.getElementById('marksDisplay').textContent = `[ +${q.marks} | -${q.marks===2?0.66:0.33} ]`;
+            document.getElementById('qNumDisplay').textContent = `Question ${index + 1}.`;
+            document.getElementById('qText').innerHTML = q.q; 
+            
+            // Options
+            const container = document.getElementById('optionsContainer');
+            container.innerHTML = '';
+            const isAnswered = resp && resp.selected;
+            
+            q.opts.forEach((opt, idx) => {
+                const char = String.fromCharCode(65 + idx);
+                const div = document.createElement('div');
+                div.className = `option-item ${isAnswered ? 'disabled' : ''}`;
+                div.innerHTML = `<input type="radio" name="opt" value="${char}" ${resp?.selected === char ? 'checked' : ''} ${isAnswered ? 'disabled' : ''}> <span style="font-weight:600; margin-right:5px;">${char}.</span> ${opt}`;
+                if(!isAnswered) div.onclick = () => { div.querySelector('input').checked = true; };
+                container.appendChild(div);
+            });
+
+            // Reset UI
+            document.getElementById('feedbackArea').innerHTML = '';
+            document.getElementById('explanation').style.display = 'none';
+            document.getElementById('extraTimeDisplay').textContent = '';
+
+            // Update Palette Active
+            document.querySelectorAll('.p-btn').forEach(b => b.classList.remove('active-q'));
+            const pBtn = document.getElementById(`pal-${index}`);
+            if(pBtn) pBtn.classList.add('active-q');
+            
+            if(window.MathJax) MathJax.typesetPromise();
+
+            // Timer Logic
+            if (isAnswered) {
+                renderStaticTime(resp.timeTaken, q.marks);
+                document.getElementById('explanation').style.display = 'block';
+                document.getElementById('explanation').innerHTML = `<strong>Explanation:</strong> ${q.exp}`;
+            } else {
+                startQTimer(q.marks);
+            }
+        }
+
+        function startQTimer(marks) {
+            qSeconds = 0;
+            document.getElementById('qTimerDisplay').textContent = "00:00";
+            if(qTimerInterval) clearInterval(qTimerInterval);
+            qTimerInterval = setInterval(() => {
+                qSeconds++;
+                document.getElementById('qTimerDisplay').textContent = formatTime(qSeconds);
+            }, 1000);
+        }
+
+        function stopQTimer() {
+            if(qTimerInterval) clearInterval(qTimerInterval);
+        }
+
+        function renderStaticTime(taken, marks) {
+            document.getElementById('qTimerDisplay').textContent = formatTime(taken);
+            const standard = marks === 2 ? 90 : 60;
+            const diff = taken - standard;
+            const el = document.getElementById('extraTimeDisplay');
+            if (diff > 0) el.innerHTML = ` <span class="txt-red">(+${diff}s extra)</span>`;
+            else el.innerHTML = ` <span class="txt-green">(Saved ${Math.abs(diff)}s)</span>`;
+        }
+
+        function checkAndNext() {
+            const q = currentQuestions[currentIndex];
+            if (responses[q.id]) {
+                if (currentIndex < currentQuestions.length - 1) loadQuestion(currentIndex + 1);
+                return;
+            }
+
+            const selected = document.querySelector('input[name="opt"]:checked');
+            if (!selected) { alert("Please select an option!"); return; }
+
+            stopQTimer();
+            const timeTaken = qSeconds;
+            
+            responses[q.id] = { selected: selected.value, timeTaken: timeTaken };
+            
+            // Show result
+            renderStaticTime(timeTaken, q.marks);
+            const fb = document.getElementById('feedbackArea');
+            if (selected.value === q.ans) fb.innerHTML = '<span class="txt-green">✅ Correct!</span>';
+            else fb.innerHTML = `<span class="txt-red">❌ Incorrect. Answer: ${q.ans}</span>`;
+            
+            document.getElementById('explanation').style.display = 'block';
+            document.getElementById('explanation').innerHTML = `<strong>Explanation:</strong> ${q.exp}`;
+            
+            // Disable inputs
+            document.querySelectorAll('input[name="opt"]').forEach(i => i.disabled = true);
+            document.querySelectorAll('.option-item').forEach(i => i.classList.add('disabled'));
+
+            updatePalette();
+            updateScore();
+        }
+
+        function clearResponse() {
+            if(responses[currentQuestions[currentIndex].id]) return;
+            document.querySelectorAll('input[name="opt"]').forEach(i => i.checked = false);
+        }
+
+        function updatePalette() {
+            const idx = currentIndex;
+            const q = currentQuestions[idx];
+            const resp = responses[q.id];
+            const btn = document.getElementById(`pal-${idx}`);
+            if(!btn) return;
+            
+            btn.classList.remove('status-correct', 'status-incorrect');
+            if (resp && resp.selected) {
+                if (resp.selected === q.ans) btn.classList.add('status-correct');
+                else btn.classList.add('status-incorrect');
+            }
+        }
+
+        function renderPalette() {
+            const grid = document.getElementById('questionPalette');
+            grid.innerHTML = '';
+            currentQuestions.forEach((q, idx) => {
+                const btn = document.createElement('div');
+                btn.id = `pal-${idx}`;
+                btn.className = 'p-btn';
+                btn.textContent = idx + 1;
+                btn.onclick = () => loadQuestion(idx);
+                grid.appendChild(btn);
+            });
+            // Restore colors
+            currentQuestions.forEach((q, i) => {
+               if(responses[q.id]) {
+                   const btn = document.getElementById(`pal-${i}`);
+                   if(responses[q.id].selected === q.ans) btn.classList.add('status-correct');
+                   else btn.classList.add('status-incorrect');
+               } 
+            });
+            updateScore();
+        }
+
+        function updateScore() {
+            let score = 0, attempted = 0, correct = 0;
+            currentQuestions.forEach(q => {
+                if(responses[q.id]) {
+                    attempted++;
+                    if(responses[q.id].selected === q.ans) {
+                        score += q.marks;
+                        correct++;
+                    } else {
+                        score -= (q.marks === 2 ? 0.66 : 0.33);
+                    }
+                }
+            });
+            document.getElementById('scoreVal').textContent = score.toFixed(2);
+            document.getElementById('attemptedVal').textContent = attempted;
+            document.getElementById('accuracyVal').textContent = attempted ? Math.round((correct/attempted)*100) + '%' : '0%';
+        }
+
+        // --- REPORT & PDF ---
+        function showReport() {
+            clearInterval(examTimerInterval);
+            stopQTimer();
+            
+            // Populate Report
+            const date = new Date().toLocaleString();
+            document.getElementById('reportDate').textContent = date;
+            document.getElementById('repTopic').textContent = document.getElementById('topicSelect').value;
+            document.getElementById('repScore').textContent = document.getElementById('scoreVal').textContent;
+            document.getElementById('repAcc').textContent = document.getElementById('accuracyVal').textContent;
+            document.getElementById('repTime').textContent = document.getElementById('examTimer').textContent;
+
+            const list = document.getElementById('reportDetails');
+            list.innerHTML = '';
+
+            currentQuestions.forEach((q, i) => {
+                const resp = responses[q.id];
+                const isCorrect = resp && resp.selected === q.ans;
+                const statusClass = !resp ? 'rep-unattempted' : (isCorrect ? 'rep-correct' : 'rep-incorrect');
+                const statusText = !resp ? 'Not Attempted' : (isCorrect ? 'Correct' : 'Incorrect');
+                
+                const item = document.createElement('div');
+                item.className = 'report-q-item';
+                item.innerHTML = `
+                    <div class="report-q-header">
+                        <span>Q${i+1}. [${q.type ? q.type.replace('_',' ').toUpperCase() : 'PRACTICE'}]</span>
+                        <span class="rep-status ${statusClass}">${statusText}</span>
+                    </div>
+                    <div style="margin-bottom:8px; font-weight:500;">${q.q}</div>
+                    <div style="font-size:0.9rem; margin-bottom:5px;">
+                        <span style="color:#666;">Correct: ${q.ans}</span> | 
+                        <span style="color:${isCorrect?'green':'red'}; font-weight:bold;">Your Ans: ${resp ? resp.selected : '-'}</span> |
+                        <span>Time: ${resp ? formatTime(resp.timeTaken) : '-'}</span>
+                    </div>
+                    <div style="background:#f4f4f4; padding:8px; border-radius:4px; font-size:0.85rem;">
+                        <strong>Explanation:</strong> ${q.exp}
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+
+            document.getElementById('mainInterface').style.display = 'none';
+            document.getElementById('reportContainer').style.display = 'block';
+        }
+
+        function downloadPDF() {
+            const element = document.getElementById('pdfContent');
+            const opt = {
+                margin: 0.5,
+                filename: 'GATE_DE_Report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(element).save();
+        }
+    </script>
+</body>
+</html>
